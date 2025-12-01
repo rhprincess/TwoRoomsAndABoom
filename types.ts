@@ -35,6 +35,9 @@ export interface Player {
   is_revealed: boolean;
   condition_met: boolean; // For linked roles
   joined_at: string;
+  // New fields
+  room_number: 1 | 2 | null;
+  is_leader: boolean;
 }
 
 export interface Room {

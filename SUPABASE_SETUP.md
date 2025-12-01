@@ -1,3 +1,4 @@
+
 # Supabase Setup Instructions
 
 To run this application, you need to set up a Supabase project and run the following SQL in the SQL Editor.
@@ -32,7 +33,9 @@ create table players (
   is_god boolean default false,
   is_revealed boolean default false,
   condition_met boolean default false,
-  joined_at timestamptz default now()
+  joined_at timestamptz default now(),
+  room_number int,
+  is_leader boolean default false
 );
 
 -- 3. Enable Realtime

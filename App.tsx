@@ -8,8 +8,8 @@ import { BombExplosion, MockeryEffect } from './components/VisualEffects';
 // --- Icons ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
 const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>;
+const CrownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 111.772.954l-2.463 4.621 1.991.995a1 1 0 11-.894 1.79l-1.233-.616 1.733 5.426a1 1 0 01-1.429 1.285l-4.59.816-1.554-4.867 1.233.617a1 1 0 01.894-1.79l-1.991-.995-2.463-4.621a1 1 0 111.772-.954l1.699 3.181L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552a1 1 0 01-1.285.592l-1.636-.596a1 1 0 11.697-1.874l1.248.455.795-2.486a1 1 0 111.9.957zM15 10.274l.818 2.552a1 1 0 001.285.592l1.636-.596a1 1 0 00-.697-1.874l-1.248.455-.795-2.486a1 1 0 00-1.9.957z" clipRule="evenodd" /></svg>;
 
 // --- Components ---
 
@@ -64,6 +64,9 @@ export default function App() {
   const [customRoleWin, setCustomRoleWin] = useState('');
   const [customRoleTeam, setCustomRoleTeam] = useState<Team>(Team.GREY);
 
+  // --- God Edit Modal State ---
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+
   // --- Realtime Subscriptions ---
   useEffect(() => {
     if (!currentRoom) return;
@@ -82,7 +85,7 @@ export default function App() {
   }, [currentRoom?.code]);
 
   const fetchPlayers = async (code: string) => {
-    const { data } = await supabase.from('players').select('*').eq('room_code', code);
+    const { data } = await supabase.from('players').select('*').eq('room_code', code).order('joined_at');
     if (data) {
         setPlayers(data);
         const me = data.find(p => p.id === currentPlayer?.id);
@@ -90,23 +93,33 @@ export default function App() {
     }
   };
 
-  // --- Timer Logic ---
+  // --- Timer Logic (Synced to Server Time) ---
   useEffect(() => {
+    // Immediate reset if not playing
     if (!currentRoom || currentRoom.status !== GameStatus.PLAYING || !currentRoom.round_end_time) {
       setTimeLeft(0);
       return;
     }
 
+    const calculateTime = () => {
+        if (!currentRoom.round_end_time) return 0;
+        const end = new Date(currentRoom.round_end_time).getTime();
+        const now = new Date().getTime(); // Using client clock, assuming reasonable sync or offset is negligible for casual play
+        const diff = Math.max(0, Math.ceil((end - now) / 1000));
+        return diff;
+    };
+
+    // Initial check
+    setTimeLeft(calculateTime());
+
     const interval = setInterval(() => {
-      const end = new Date(currentRoom.round_end_time!).getTime();
-      const now = new Date().getTime();
-      const diff = Math.max(0, Math.floor((end - now) / 1000));
+      const diff = calculateTime();
       setTimeLeft(diff);
       
-      if (diff === 0 && currentPlayer?.is_god) {
-        pauseRound();
+      if (diff <= 0 && currentPlayer?.is_god) {
+        pauseRound(); // God triggers the pause
       }
-    }, 1000);
+    }, 250); // Check 4 times a second for smoother feel
 
     return () => clearInterval(interval);
   }, [currentRoom, currentPlayer?.is_god]);
@@ -166,7 +179,9 @@ export default function App() {
         role: null,
         is_revealed: false,
         condition_met: false,
-        joined_at: new Date().toISOString()
+        joined_at: new Date().toISOString(),
+        room_number: null,
+        is_leader: false
       };
 
       const { error: joinError } = await supabase.from('players').insert(newPlayer);
@@ -226,19 +241,27 @@ export default function App() {
     for (let i = 0; i < redFills; i++) deck.push(redTeamCard);
 
     const shuffledDeck = deck.sort(() => Math.random() - 0.5);
+    
+    // Room Assignment (Split 50/50)
+    // We also shuffle players array to randomize who goes to Room 1 vs 2
+    const shuffledPlayers = [...playingPlayers].sort(() => Math.random() - 0.5);
+    const half = Math.ceil(playerCount / 2);
 
-    const updates = playingPlayers.map((p, index) => ({
-      ...p,
-      role: shuffledDeck[index],
-      team: shuffledDeck[index].team
-    }));
+    for (let i = 0; i < playerCount; i++) {
+        const p = shuffledPlayers[i];
+        const assignedRole = shuffledDeck[i];
+        const assignedRoom = i < half ? 1 : 2;
 
-    for (const p of updates) {
-       await supabase.from('players').update({ role: p.role, team: p.team, condition_met: false }).eq('id', p.id);
+        await supabase.from('players').update({ 
+            role: assignedRole, 
+            team: assignedRole.team, 
+            condition_met: false,
+            room_number: assignedRoom,
+            is_leader: false 
+        }).eq('id', p.id);
     }
 
-    const endTime = new Date();
-    endTime.setSeconds(endTime.getSeconds() + currentRoom.settings.round_lengths[0]);
+    const endTime = new Date(Date.now() + currentRoom.settings.round_lengths[0] * 1000);
 
     await supabase.from('rooms').update({
       status: GameStatus.PLAYING,
@@ -254,18 +277,23 @@ export default function App() {
   const nextRound = async () => {
       if(!currentRoom) return;
       const nextR = currentRoom.current_round + 1;
-      if (nextR > currentRoom.settings.rounds) {
-          await supabase.from('rooms').update({ status: GameStatus.FINISHED, round_end_time: null }).eq('code', currentRoom.code);
-      } else {
-          const length = currentRoom.settings.round_lengths[nextR - 1] || 60;
-          const endTime = new Date();
-          endTime.setSeconds(endTime.getSeconds() + length);
-          await supabase.from('rooms').update({
-            status: GameStatus.PLAYING,
-            current_round: nextR,
-            round_end_time: endTime.toISOString()
-          }).eq('code', currentRoom.code);
+      
+      // Stop automatic progression after round 3
+      if (nextR > 3) {
+          // Just update status to indicate waiting for god to end
+          // Or we can just stay in PAUSED state.
+          // The God UI handles the visual for "Game Over / Decision".
+          return;
       }
+      
+      const length = currentRoom.settings.round_lengths[nextR - 1] || 60;
+      const endTime = new Date(Date.now() + length * 1000);
+      
+      await supabase.from('rooms').update({
+        status: GameStatus.PLAYING,
+        current_round: nextR,
+        round_end_time: endTime.toISOString()
+      }).eq('code', currentRoom.code);
   };
 
   const setWinner = async (team: Team) => {
@@ -284,7 +312,7 @@ export default function App() {
       
       // Reset Players
       const { error } = await supabase.from('players')
-          .update({ role: null, team: Team.GREY, is_revealed: false, condition_met: false })
+          .update({ role: null, team: Team.GREY, is_revealed: false, condition_met: false, room_number: null, is_leader: false })
           .eq('room_code', currentRoom.code)
           .eq('is_god', false);
 
@@ -294,6 +322,17 @@ export default function App() {
   const toggleDebug = async () => {
       if(!currentRoom) return;
       await supabase.from('rooms').update({ settings: { ...currentRoom.settings, debug_mode: !currentRoom.settings.debug_mode } }).eq('code', currentRoom.code);
+  }
+
+  // God Actions
+  const movePlayerRoom = async (player: Player, targetRoom: 1 | 2) => {
+      await supabase.from('players').update({ room_number: targetRoom }).eq('id', player.id);
+  }
+
+  const toggleLeader = async (player: Player) => {
+      // Logic: If making leader, ensure no one else in that room is leader? Or just toggle.
+      // Keeping it simple: Toggle. God cleans up messes.
+      await supabase.from('players').update({ is_leader: !player.is_leader }).eq('id', player.id);
   }
 
   const formatTime = (seconds: number) => {
@@ -343,7 +382,7 @@ export default function App() {
                     value={playerName} 
                     onChange={e => setPlayerName(e.target.value)} 
                     placeholder="输入昵称..." 
-                    className="w-full p-6 text-2xl font-bold bg-white rounded-2xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none transition text-center"
+                    className="w-full p-6 text-2xl font-bold bg-white rounded-2xl border-2 border-slate-200 text-slate-900 focus:border-blue-500 focus:ring-0 outline-none transition text-center placeholder:text-slate-300"
                 />
                 <button 
                     disabled={!playerName.trim()}
@@ -423,25 +462,78 @@ export default function App() {
 
   // --- God View ---
   if (currentPlayer?.is_god) {
+    // Helper to render player list for a room
+    const renderRoomColumn = (roomNum: 1 | 2) => {
+        const roomPlayers = players.filter(p => !p.is_god && p.room_number === roomNum);
+        return (
+            <div className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className={`p-3 font-bold text-center text-sm uppercase tracking-wide border-b border-slate-100 flex justify-between items-center ${roomNum === 1 ? 'bg-indigo-50 text-indigo-700' : 'bg-orange-50 text-orange-700'}`}>
+                    <span>房间 {roomNum}</span>
+                    <span className="bg-white/50 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
+                </div>
+                <div className="p-2 space-y-2 overflow-y-auto flex-1">
+                    {roomPlayers.map(p => (
+                        <div key={p.id} className="relative p-2 rounded-lg border border-slate-100 bg-slate-50 group hover:border-slate-300 transition">
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="font-bold text-slate-800 text-sm truncate">{p.name}</span>
+                                {p.role && (
+                                    <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-red-100 text-red-700' : p.team === Team.BLUE ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>
+                                        {p.role.name}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-2">
+                                <button 
+                                    onClick={() => toggleLeader(p)}
+                                    className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-white shadow-sm' : 'text-slate-300 hover:text-yellow-400 hover:bg-yellow-50'}`}
+                                >
+                                    <CrownIcon />
+                                </button>
+
+                                <div className="flex gap-1">
+                                    {/* Move to other room */}
+                                    {roomNum === 1 ? (
+                                        <button onClick={() => movePlayerRoom(p, 2)} className="bg-white border border-slate-200 text-slate-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 px-2 py-1 rounded text-xs font-bold transition">
+                                            移至房间 2 →
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => movePlayerRoom(p, 1)} className="bg-white border border-slate-200 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 px-2 py-1 rounded text-xs font-bold transition">
+                                            ← 移至房间 1
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
-      <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans">
+      <div className="h-screen bg-slate-100 text-slate-800 flex flex-col font-sans overflow-hidden">
         {/* Header */}
-        <header className="bg-white p-4 shadow-sm flex justify-between items-center border-b border-slate-200 sticky top-0 z-50">
+        <header className="bg-white px-4 py-2 shadow-sm flex justify-between items-center border-b border-slate-200 shrink-0">
             <div className="flex items-center gap-3">
                 <div className="bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded">GOD</div>
                 <div className="font-mono font-bold text-xl text-slate-900">{currentRoom?.code}</div>
             </div>
-            <div className="text-right">
-                 <div className={`text-xl font-mono font-bold ${currentRoom?.status === GameStatus.PLAYING ? 'text-blue-600' : 'text-slate-400'}`}>
-                    {currentRoom?.status === GameStatus.PLAYING ? formatTime(timeLeft) : currentRoom?.status}
-                 </div>
+            
+            <div className="flex gap-2">
+                <button onClick={() => setWinner(Team.RED)} className="bg-red-100 text-red-600 border border-red-200 px-3 py-1 rounded-lg font-bold text-xs hover:bg-red-500 hover:text-white transition">红胜</button>
+                <button onClick={() => setWinner(Team.BLUE)} className="bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1 rounded-lg font-bold text-xs hover:bg-blue-500 hover:text-white transition">蓝胜</button>
+            </div>
+
+            <div className={`text-xl font-mono font-bold w-16 text-right ${currentRoom?.status === GameStatus.PLAYING ? 'text-blue-600' : 'text-slate-400'}`}>
+                {currentRoom?.status === GameStatus.PLAYING ? formatTime(timeLeft) : '---'}
             </div>
         </header>
 
-        <div className="flex-grow p-4 space-y-4 overflow-y-auto pb-20">
-            
-            {/* LOBBY: Deck Builder */}
-            {currentRoom?.status === GameStatus.LOBBY && (
+        {/* Main Content Area */}
+        {currentRoom?.status === GameStatus.LOBBY ? (
+             <div className="flex-grow p-4 space-y-4 overflow-y-auto pb-24">
+                {/* LOBBY: Deck Builder */}
                 <div className="space-y-4">
                     {/* Active Deck */}
                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -487,20 +579,12 @@ export default function App() {
                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                         <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">创建自定义卡牌</h3>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                             {/* Card Preview */}
-                             <div className={`p-4 rounded-xl border-l-4 mb-4 bg-white shadow-sm ${customRoleTeam === Team.RED ? 'border-red-500' : customRoleTeam === Team.BLUE ? 'border-blue-500' : 'border-slate-400'}`}>
-                                 <div className="text-xs font-bold uppercase text-slate-400 mb-1">{customRoleTeam === Team.RED ? '红队' : customRoleTeam === Team.BLUE ? '蓝队' : '灰队'}</div>
-                                 <div className="font-black text-xl text-slate-800 mb-1">{customRoleName || '角色名称'}</div>
-                                 <div className="text-xs text-slate-500">{customRoleDesc || '描述...'}</div>
-                                 {customRoleWin && <div className="mt-2 text-xs font-bold text-slate-700">胜利条件: {customRoleWin}</div>}
-                             </div>
-
                              <div className="flex gap-2">
                                 <input 
                                     value={customRoleName}
                                     onChange={e => setCustomRoleName(e.target.value)}
                                     placeholder="名称" 
-                                    className="flex-1 p-2 rounded-lg border border-slate-300 text-sm"
+                                    className="flex-1 p-2 rounded-lg border border-slate-300 text-sm text-slate-900"
                                 />
                                 <select 
                                     value={customRoleTeam}
@@ -516,13 +600,13 @@ export default function App() {
                                 value={customRoleDesc}
                                 onChange={e => setCustomRoleDesc(e.target.value)}
                                 placeholder="角色能力/描述" 
-                                className="w-full p-2 rounded-lg border border-slate-300 text-sm"
+                                className="w-full p-2 rounded-lg border border-slate-300 text-sm text-slate-900"
                              />
                              <input 
                                 value={customRoleWin}
                                 onChange={e => setCustomRoleWin(e.target.value)}
                                 placeholder="胜利条件 (可选)" 
-                                className="w-full p-2 rounded-lg border border-slate-300 text-sm"
+                                className="w-full p-2 rounded-lg border border-slate-300 text-sm text-slate-900"
                              />
                              <button 
                                 onClick={() => {
@@ -548,42 +632,49 @@ export default function App() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Game Controls */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-50">
-                <div className="flex gap-2 max-w-md mx-auto">
-                    {currentRoom?.status === GameStatus.LOBBY && (
-                        <button onClick={startGame} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-green-200 active:scale-95 transition">
-                            开始游戏 ({players.filter(p=>!p.is_god).length} 人)
-                        </button>
-                    )}
-                    {currentRoom?.status === GameStatus.PLAYING && (
-                        <button onClick={pauseRound} className="flex-1 bg-amber-500 text-white p-3 rounded-xl font-bold shadow-lg shadow-amber-200 active:scale-95 transition">
-                            暂停 / 结束回合
-                        </button>
-                    )}
-                    {currentRoom?.status === GameStatus.PAUSED && (
-                        <button onClick={nextRound} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
-                            开始第 {currentRoom.current_round + 1} 回合
-                        </button>
-                    )}
-                    
-                    {/* Debug Toggle */}
-                     <button onClick={toggleDebug} className={`px-3 rounded-xl border font-bold text-xs ${currentRoom?.settings.debug_mode ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                        {currentRoom?.settings.debug_mode ? '测试' : '正式'}
-                    </button>
+             </div>
+        ) : (
+            // GAME DASHBOARD (Two Rooms View)
+            <div className="flex-grow p-2 flex flex-col gap-2 min-h-0">
+                <div className="flex justify-center shrink-0 mb-1">
+                    <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                         第 {currentRoom?.current_round} 回合
+                    </span>
                 </div>
+                
+                <div className="flex-grow flex gap-2 min-h-0">
+                    {renderRoomColumn(1)}
+                    {renderRoomColumn(2)}
+                </div>
+
+                <div className="shrink-0 h-16"></div> {/* Spacer for controls */}
             </div>
+        )}
 
-            {/* Winner Override (Hidden in Details) */}
-            <details className="text-center pb-24">
-                <summary className="text-xs text-slate-400 font-bold uppercase tracking-widest cursor-pointer mb-4">强制结束游戏</summary>
-                <div className="flex gap-2 max-w-md mx-auto">
-                    <button onClick={() => setWinner(Team.RED)} className="flex-1 border-2 border-red-500 text-red-500 p-2 rounded-lg font-bold text-sm hover:bg-red-50">红队胜</button>
-                    <button onClick={() => setWinner(Team.BLUE)} className="flex-1 border-2 border-blue-500 text-blue-500 p-2 rounded-lg font-bold text-sm hover:bg-blue-50">蓝队胜</button>
-                </div>
-            </details>
+        {/* Footer Controls */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-50">
+            <div className="flex gap-2 max-w-md mx-auto">
+                {currentRoom?.status === GameStatus.LOBBY && (
+                    <button onClick={startGame} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-green-200 active:scale-95 transition">
+                        开始游戏 ({players.filter(p=>!p.is_god).length} 人)
+                    </button>
+                )}
+                {currentRoom?.status === GameStatus.PLAYING && (
+                    <button onClick={pauseRound} className="flex-1 bg-amber-500 text-white p-3 rounded-xl font-bold shadow-lg shadow-amber-200 active:scale-95 transition">
+                        暂停 / 结束回合
+                    </button>
+                )}
+                {currentRoom?.status === GameStatus.PAUSED && (
+                    <button onClick={nextRound} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+                        {currentRoom.current_round >= 3 ? '等待最终宣判' : `开始第 ${currentRoom.current_round + 1} 回合`}
+                    </button>
+                )}
+                
+                {/* Debug Toggle */}
+                 <button onClick={toggleDebug} className={`px-3 rounded-xl border font-bold text-xs ${currentRoom?.settings.debug_mode ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                    {currentRoom?.settings.debug_mode ? '测试' : '正式'}
+                </button>
+            </div>
         </div>
       </div>
     );
@@ -607,7 +698,15 @@ export default function App() {
             <div className={`p-2 rounded-full text-white ${currentPlayer.team === Team.RED ? 'bg-red-500' : currentPlayer.team === Team.BLUE ? 'bg-blue-500' : 'bg-slate-500'}`}>
                  <UserIcon />
             </div>
-            <span className="font-bold text-slate-800 text-lg truncate max-w-[120px]">{currentPlayer.name}</span>
+            <div className="flex flex-col">
+                <span className="font-bold text-slate-800 text-lg truncate max-w-[100px] leading-none">{currentPlayer.name}</span>
+                <span className="text-xs font-bold text-slate-400">房间 {currentPlayer.room_number || '?'}</span>
+            </div>
+            {currentPlayer.is_leader && (
+                 <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-200 flex items-center gap-1">
+                     <CrownIcon /> 领袖
+                 </span>
+            )}
         </div>
         <div className={`flex items-center gap-2 font-mono text-2xl font-black ${timeLeft < 10 && timeLeft > 0 ? 'text-red-500 animate-pulse' : 'text-slate-800'}`}>
             <ClockIcon />
@@ -615,30 +714,31 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Card Area */}
-      <div className="flex-grow flex items-center justify-center p-6 perspective-1000 overflow-hidden relative">
+      <div className="bg-slate-200/50 py-1 text-center text-xs font-bold text-slate-500">
+          第 {currentRoom?.current_round} 回合
+      </div>
+
+      {/* Main Card Area - Updated Logic to prevent occlusion */}
+      <div className="flex-grow flex items-center justify-center p-6 relative">
         <div 
             onClick={() => setIsFlipped(!isFlipped)}
-            className={`relative w-full max-w-sm aspect-[2/3] cursor-pointer group card-flip transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]`}
+            className="w-full max-w-sm aspect-[2/3] cursor-pointer group transition-transform duration-200 active:scale-[0.98] relative"
         >
-            <div className={`relative w-full h-full duration-500 transform-style-3d transition-all ${isFlipped ? 'rotate-y-180' : ''}`} style={{transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'}}>
-                
-                {/* Back of Card (Hidden State) */}
-                <div className="absolute inset-0 bg-white rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center backface-hidden" style={{backfaceVisibility: 'hidden'}}>
-                     {/* Pattern */}
+            {/* CARD BACK (Hidden when flipped) */}
+            {!isFlipped && (
+                <div className="absolute inset-0 bg-white rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center animate-in fade-in duration-300">
                      <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIi8+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')]"></div>
-                     
                      <div className="z-10 bg-slate-900 text-white rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg mb-6">?</div>
                      <div className="z-10 text-slate-900 font-black uppercase tracking-widest text-lg border-2 border-slate-900 px-6 py-2 rounded-lg">点击查看身份</div>
                 </div>
+            )}
 
-                {/* Front of Card (Role) */}
-                <div className="absolute inset-0 bg-white text-slate-900 rounded-3xl border-8 border-white shadow-2xl overflow-hidden backface-hidden flex flex-col" style={{backfaceVisibility: 'hidden', transform: 'rotateY(180deg)'}}>
-                    {/* Color Header */}
+            {/* CARD FRONT (Shown when flipped) */}
+            {isFlipped && (
+                <div className="absolute inset-0 bg-white text-slate-900 rounded-3xl border-8 border-white shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                     <div className={`h-4 w-full ${currentPlayer.team === Team.RED ? 'bg-red-500' : currentPlayer.team === Team.BLUE ? 'bg-blue-500' : 'bg-slate-500'}`}></div>
                     
                     <div className="p-8 flex flex-col h-full relative z-10">
-                        {/* Watermark */}
                         <div className={`absolute bottom-0 right-0 p-6 opacity-5 text-9xl font-black pointer-events-none`}>
                             {currentPlayer.team === Team.RED ? 'RED' : currentPlayer.team === Team.BLUE ? 'BLUE' : 'GREY'}
                         </div>
@@ -679,12 +779,12 @@ export default function App() {
 
                         <div className="mt-auto text-center pt-6 border-t border-slate-100">
                             <div className="text-slate-300 text-[10px] font-bold uppercase tracking-widest">
-                                请勿向他人展示手机屏幕
+                                点击隐藏
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
       </div>
       
