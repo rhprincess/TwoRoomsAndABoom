@@ -8,7 +8,7 @@ export const COLORS = {
   
   // Blue Team
   BLUE_LIGHT: '#82a0d2',
-  BLUE_DARK: '#4c4595',
+  BLUE_DARK: '#2562c6',
   
   // Red Team
   RED_LIGHT: '#ff8fa3',

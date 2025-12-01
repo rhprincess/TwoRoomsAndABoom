@@ -287,6 +287,7 @@ export default function App() {
   const [customRoleDesc, setCustomRoleDesc] = useState('');
   const [customRoleWin, setCustomRoleWin] = useState('');
   const [customRoleTeam, setCustomRoleTeam] = useState<Team>(Team.GREY);
+  const [customRoleRelation, setCustomRoleRelation] = useState('');
   const [saveSetName, setSaveSetName] = useState('');
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
@@ -612,6 +613,61 @@ export default function App() {
       await supabase.from('rooms').update({ pending_exchanges: newExchanges }).eq('code', currentRoom.code);
   };
 
+  const executeExchange = async () => {
+      if (!currentRoom?.pending_exchanges?.room1_target_id || !currentRoom?.pending_exchanges?.room2_target_id) return;
+      
+      const id1 = currentRoom.pending_exchanges.room1_target_id;
+      const id2 = currentRoom.pending_exchanges.room2_target_id;
+
+      const p1 = players.find(p => p.id === id1);
+      const p2 = players.find(p => p.id === id2);
+
+      if (!p1 || !p2) return;
+
+      // 1. Move players and strip leadership
+      await supabase.from('players').update({ room_number: 2, is_leader: false }).eq('id', id1);
+      await supabase.from('players').update({ room_number: 1, is_leader: false }).eq('id', id2);
+
+      // 2. Re-elect leaders if needed
+      // Get remaining players in Room 1 (excluding the one who left, including the one who arrived)
+      // Note: We can't rely on `players` state immediately, we must calc based on logic
+      
+      // If p1 was leader of Room 1, we need new leader in Room 1
+      if (p1.is_leader) {
+          const r1Candidates = players.filter(p => p.room_number === 1 && p.id !== p1.id && !p.is_god); // p2 is not here yet in local state, but that's fine, pick from existing locals
+          if (r1Candidates.length > 0) {
+              const newL = r1Candidates[Math.floor(Math.random() * r1Candidates.length)];
+              await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
+          }
+      }
+       // If p2 was leader of Room 2, we need new leader in Room 2
+      if (p2.is_leader) {
+          const r2Candidates = players.filter(p => p.room_number === 2 && p.id !== p2.id && !p.is_god);
+          if (r2Candidates.length > 0) {
+              const newL = r2Candidates[Math.floor(Math.random() * r2Candidates.length)];
+              await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
+          }
+      }
+
+      // 3. Clear pending
+      await supabase.from('rooms').update({ pending_exchanges: {} }).eq('code', currentRoom.code);
+  };
+
+  const handleGameEnd = async (winner: Team) => {
+      if (!currentRoom) return;
+      try {
+          const { error } = await supabase.from('rooms').update({ 
+              winner: winner, 
+              status: GameStatus.FINISHED 
+          }).eq('code', currentRoom.code);
+          
+          if (error) throw error;
+      } catch (e) {
+          console.error("Error ending game:", e);
+          alert("结束游戏失败，请重试");
+      }
+  };
+
   const closeGame = async () => {
       if (!currentRoom || !window.confirm("确定要结束游戏并删除数据吗？")) return;
       await supabase.from('rooms').delete().eq('code', currentRoom.code);
@@ -753,7 +809,7 @@ export default function App() {
         return (
             <div className="relative z-50">
                 {currentRoom.winner === Team.RED ? <BombExplosion /> : <MockeryEffect />}
-                <button onClick={leaveGame} className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-white text-[#4d4696] px-8 py-3 rounded-full font-bold shadow-2xl">返回主页</button>
+                <button onClick={leaveGame} className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-white text-[#4d4696] px-8 py-3 rounded-full font-bold shadow-2xl hover:scale-105 transition">返回主页</button>
             </div>
         );
     }
@@ -766,6 +822,7 @@ export default function App() {
             
             // Check for pending exchanges selected by Leader
             const selectedForExchangeId = roomNum === 1 ? currentRoom?.pending_exchanges?.room1_target_id : currentRoom?.pending_exchanges?.room2_target_id;
+            const targetPlayerName = players.find(p => p.id === selectedForExchangeId)?.name;
 
             return (
                 <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-2xl border border-white/10 shadow-sm overflow-hidden">
@@ -773,6 +830,12 @@ export default function App() {
                         <span>房间 {roomNum}</span>
                         <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
                     </div>
+                     {/* Nomination Banner */}
+                     {selectedForExchangeId && (
+                        <div className="bg-yellow-500 text-black text-xs font-bold p-2 text-center animate-pulse">
+                            领袖提名交换: {targetPlayerName}
+                        </div>
+                    )}
                     <div className="p-2 space-y-2 overflow-y-auto flex-1">
                         {roomPlayers.map(p => {
                             const isSelected = selectedForExchangeId === p.id;
@@ -821,6 +884,8 @@ export default function App() {
             );
         };
 
+        const canExecuteExchange = currentRoom?.pending_exchanges?.room1_target_id && currentRoom?.pending_exchanges?.room2_target_id;
+
         return (
             <div className="h-screen bg-[#2d285e] text-white flex flex-col font-sans overflow-hidden z-20 relative">
                 <header className="bg-[#4d4696] px-4 py-2 shadow-lg flex justify-between items-center border-b border-white/10 shrink-0 z-20">
@@ -829,8 +894,8 @@ export default function App() {
                         <span className="bg-[#5abb2d] text-xs px-2 py-1 rounded font-bold">GOD</span>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => supabase.from('rooms').update({ winner: Team.RED, status: GameStatus.FINISHED }).eq('code', currentRoom?.code)} className="bg-[#de0029] text-white px-3 py-1 rounded text-xs font-bold border border-white/20">红胜</button>
-                        <button onClick={() => supabase.from('rooms').update({ winner: Team.BLUE, status: GameStatus.FINISHED }).eq('code', currentRoom?.code)} className="bg-[#82a0d2] text-[#4c4595] px-3 py-1 rounded text-xs font-bold border border-white/20">蓝胜</button>
+                        <button onClick={() => handleGameEnd(Team.RED)} className="bg-[#de0029] text-white px-3 py-1 rounded text-xs font-bold border border-white/20 hover:scale-105 transition">红胜</button>
+                        <button onClick={() => handleGameEnd(Team.BLUE)} className="bg-[#82a0d2] text-[#4c4595] px-3 py-1 rounded text-xs font-bold border border-white/20 hover:scale-105 transition">蓝胜</button>
                         <button onClick={closeGame} className="bg-red-900/50 text-red-300 px-3 py-1 rounded text-xs font-bold">关闭</button>
                     </div>
                     {/* Consistent Timer Style */}
@@ -848,7 +913,8 @@ export default function App() {
                                     description: customRoleDesc || '描述文本...',
                                     team: customRoleTeam,
                                     isKeyRole: false,
-                                    winCondition: customRoleWin
+                                    winCondition: customRoleWin,
+                                    relatedRoleId: customRoleRelation
                                 }} 
                                 team={customRoleTeam} 
                                 isLeader={true}
@@ -867,12 +933,22 @@ export default function App() {
                             </div>
                             <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
                             <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                             <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联角色ID (可选, 如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
                             <button 
                                 onClick={() => {
                                     if(!customRoleName) return;
-                                    const newRole = { id: `custom_${Date.now()}`, name: customRoleName, description: customRoleDesc, team: customRoleTeam, isKeyRole: false, isCustom: true, winCondition: customRoleWin };
+                                    const newRole = { 
+                                        id: `custom_${Date.now()}`, 
+                                        name: customRoleName, 
+                                        description: customRoleDesc, 
+                                        team: customRoleTeam, 
+                                        isKeyRole: false, 
+                                        isCustom: true, 
+                                        winCondition: customRoleWin,
+                                        relatedRoleId: customRoleRelation || undefined
+                                    };
                                     updateRoles([...currentRoom.custom_roles, newRole]);
-                                    setCustomRoleName(''); setCustomRoleDesc(''); setCustomRoleWin('');
+                                    setCustomRoleName(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation('');
                                 }}
                                 className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
                             >添加至卡组</button>
@@ -941,8 +1017,17 @@ export default function App() {
                     // GAME VIEW (God Dashboard)
                     <div className="flex-grow flex flex-col p-2 gap-2 min-h-0">
                         {currentRoom?.status === GameStatus.PAUSED && (
-                             <div className="bg-orange-500/20 text-orange-200 text-xs text-center py-1 rounded border border-orange-500/50 animate-pulse">
-                                 回合结束。等待领袖选定交换人选，然后手动执行移动。
+                             <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10">
+                                 <div className="text-xs text-center text-orange-200">
+                                     交换阶段：等待双方领袖提名...
+                                 </div>
+                                 <button 
+                                    onClick={executeExchange}
+                                    disabled={!canExecuteExchange}
+                                    className={`w-full py-2 rounded font-bold transition ${canExecuteExchange ? 'bg-[#5abb2d] text-white animate-pulse' : 'bg-white/10 text-white/30 cursor-not-allowed'}`}
+                                 >
+                                     {canExecuteExchange ? '执行人质交换' : '等待双方提名...'}
+                                 </button>
                              </div>
                         )}
                         <div className="flex-grow flex gap-2 min-h-0">
@@ -998,7 +1083,7 @@ export default function App() {
     if (currentPlayer?.role) {
         // Exchange Selection Mode for Leader
         if (currentRoom?.status === GameStatus.PAUSED && currentPlayer.is_leader) {
-             const myRoomPlayers = players.filter(p => p.room_number === currentPlayer.room_number && p.id !== currentPlayer.id && !p.is_god);
+             const myRoomPlayers = players.filter(p => p.room_number === currentPlayer.room_number && !p.is_god); // Allow self-selection
              const myPendingTarget = currentPlayer.room_number === 1 ? currentRoom.pending_exchanges?.room1_target_id : currentRoom.pending_exchanges?.room2_target_id;
              
              return (
@@ -1011,7 +1096,7 @@ export default function App() {
                                 onClick={() => handleLeaderExchangeSelect(p.id)}
                                 className={`w-full p-4 rounded-xl flex justify-between items-center transition ${myPendingTarget === p.id ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
                             >
-                                <span className="font-bold">{p.name}</span>
+                                <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
                                 {myPendingTarget === p.id && <CheckCircleIcon />}
                             </button>
                         ))}
