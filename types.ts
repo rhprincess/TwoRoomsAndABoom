@@ -1,3 +1,4 @@
+
 export enum Team {
   BLUE = 'BLUE', // President's team
   RED = 'RED',   // Bomber's team
@@ -20,6 +21,8 @@ export interface Role {
   relatedRoleId?: string; // e.g., Shy Guy A needs Shy Guy B
   relatedRoleName?: string;
   isCustom?: boolean;
+  winCondition?: string; // Explicit win condition text
+  constraints?: string; // Usage constraints (e.g., "Must show card")
 }
 
 export interface Player {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role } from './types';
@@ -7,21 +8,61 @@ import { BombExplosion, MockeryEffect } from './components/VisualEffects';
 // --- Icons ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-const EyeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>;
+
+// --- Components ---
+
+const Keypad = ({ onInput, onConfirm, onCancel, onDelete, value, label }: { onInput: (n: number) => void, onConfirm: () => void, onCancel: () => void, onDelete: () => void, value: string, label: string }) => {
+    return (
+        <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm">
+            <div className="text-center mb-6">
+                <h3 className="text-slate-500 uppercase text-xs font-bold tracking-widest mb-2">{label}</h3>
+                <div className="text-4xl font-mono font-black text-slate-800 tracking-[0.5em] h-12 flex items-center justify-center bg-slate-100 rounded-xl border border-slate-200">
+                    {value.padEnd(4, '_')}
+                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <button key={num} onClick={() => onInput(num)} className="h-16 rounded-xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition shadow-sm border border-slate-200 active:scale-95">
+                        {num}
+                    </button>
+                ))}
+                <button onClick={onCancel} className="h-16 rounded-xl bg-red-50 text-red-500 font-bold hover:bg-red-100 transition border border-red-100 active:scale-95 text-sm">取消</button>
+                <button onClick={() => onInput(0)} className="h-16 rounded-xl bg-slate-50 text-2xl font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition shadow-sm border border-slate-200 active:scale-95">0</button>
+                <button onClick={onDelete} className="h-16 rounded-xl bg-slate-50 text-slate-500 font-bold hover:bg-slate-200 transition border border-slate-200 active:scale-95 flex items-center justify-center">
+                    <DeleteIcon />
+                </button>
+            </div>
+            <button 
+                onClick={onConfirm}
+                disabled={value.length !== 4}
+                className="w-full mt-4 h-16 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg active:scale-95">
+                确认进入
+            </button>
+        </div>
+    );
+}
 
 export default function App() {
-  const [view, setView] = useState<'LANDING' | 'LOBBY' | 'GAME'>('LANDING');
+  const [view, setView] = useState<'ROLE_SELECT' | 'PLAYER_NAME' | 'CODE_ENTRY' | 'LOBBY' | 'GAME'>('ROLE_SELECT');
+  const [roleMode, setRoleMode] = useState<'PLAYER' | 'GOD' | null>(null);
+  
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
+  
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // --- Custom Role Form State ---
+  const [customRoleName, setCustomRoleName] = useState('');
+  const [customRoleDesc, setCustomRoleDesc] = useState('');
+  const [customRoleWin, setCustomRoleWin] = useState('');
+  const [customRoleTeam, setCustomRoleTeam] = useState<Team>(Team.GREY);
 
   // --- Realtime Subscriptions ---
   useEffect(() => {
@@ -72,20 +113,25 @@ export default function App() {
 
   // --- Actions ---
 
-  const joinRoom = async (asGod: boolean = false) => {
-    if (!playerName || !roomCode) {
-      setErrorMsg("Name and Room Code are required");
-      return;
-    }
+  const handleKeypadInput = (num: number) => {
+      if (roomCode.length < 4) setRoomCode(prev => prev + num);
+  };
+
+  const handleKeypadDelete = () => {
+      setRoomCode(prev => prev.slice(0, -1));
+  };
+
+  const joinRoom = async () => {
+    if (!roomCode || (roleMode === 'PLAYER' && !playerName)) return;
     setLoading(true);
-    setErrorMsg('');
 
     try {
-      let { data: roomData, error: roomError } = await supabase.from('rooms').select('*').eq('code', roomCode).single();
+      let { data: roomData } = await supabase.from('rooms').select('*').eq('code', roomCode).single();
+      const isGod = roleMode === 'GOD';
       
       if (!roomData) {
-        if (asGod) {
-          // Initialize Room with President and Bomber as mandatory specials
+        if (isGod) {
+          // Initialize Room
           const initialRoles = [
             BASE_ROLES.find(r => r.id === 'president')!,
             BASE_ROLES.find(r => r.id === 'bomber')!
@@ -104,7 +150,9 @@ export default function App() {
           if (createError) throw createError;
           roomData = newRoom;
         } else {
-          throw new Error("Room does not exist.");
+          alert("房间不存在");
+          setLoading(false);
+          return;
         }
       }
 
@@ -112,8 +160,8 @@ export default function App() {
       const newPlayer: Partial<Player> = {
         id: playerId,
         room_code: roomCode,
-        name: playerName,
-        is_god: asGod,
+        name: isGod ? '上帝' : playerName,
+        is_god: isGod,
         team: Team.GREY,
         role: null,
         is_revealed: false,
@@ -127,21 +175,15 @@ export default function App() {
       setCurrentRoom(roomData);
       setCurrentPlayer(newPlayer as Player);
       await fetchPlayers(roomCode);
-      setView(asGod ? 'GAME' : 'LOBBY'); 
+      setView(isGod ? 'GAME' : 'LOBBY'); 
 
     } catch (e: any) {
       console.error(e);
-      if (e.message?.includes('fetch')) {
-         setErrorMsg("Connection Failed. Did you set up the database?");
-      } else {
-         setErrorMsg(e.message || "Failed to join.");
-      }
+      alert(e.message || "加入失败");
     } finally {
       setLoading(false);
     }
   };
-
-  // --- God Functions ---
 
   const updateRoles = async (newRoles: Role[]) => {
       if(!currentRoom) return;
@@ -152,58 +194,49 @@ export default function App() {
     if (!currentRoom) return;
     
     // Validation
-    const playerCount = players.filter(p => !p.is_god).length;
+    const playingPlayers = players.filter(p => !p.is_god);
+    const playerCount = playingPlayers.length;
+    
     if (!currentRoom.settings.debug_mode) {
         if (playerCount < currentRoom.settings.min_players) {
-            alert(`Need at least ${currentRoom.settings.min_players} players.`);
+            alert(`至少需要 ${currentRoom.settings.min_players} 名玩家。`);
             return;
         }
         if (playerCount % 2 !== 0) {
-            alert("Player count must be even (or enable Debug Mode).");
+            alert("玩家人数必须为双数 (或开启测试模式)。");
             return;
         }
     }
 
-    // --- Deck Construction ---
-    // 1. Start with the Active Specials (custom_roles in DB)
+    // Deck Construction
     const deck = [...currentRoom.custom_roles];
-
-    // 2. Validate Deck fits in player count
     if (deck.length > playerCount) {
-        alert(`Too many special roles (${deck.length}) for the player count (${playerCount}). Remove some.`);
+        alert(`角色卡牌过多 (${deck.length}) 超过玩家人数 (${playerCount})。请移除一些特殊角色。`);
         return;
     }
 
-    // 3. Fill remaining slots with Blue/Red Team
     const remainingSlots = playerCount - deck.length;
     const blueTeamCard = BASE_ROLES.find(r => r.id === 'blue_team')!;
     const redTeamCard = BASE_ROLES.find(r => r.id === 'red_team')!;
     
-    // Generally split evenly, if odd, usually President's team has advantage or disadvantage. 
-    // We assume even players for now per requirements.
     const blueFills = Math.ceil(remainingSlots / 2);
     const redFills = Math.floor(remainingSlots / 2);
 
     for (let i = 0; i < blueFills; i++) deck.push(blueTeamCard);
     for (let i = 0; i < redFills; i++) deck.push(redTeamCard);
 
-    // 4. Shuffle
     const shuffledDeck = deck.sort(() => Math.random() - 0.5);
 
-    // 5. Assign
-    const playingPlayers = players.filter(p => !p.is_god);
     const updates = playingPlayers.map((p, index) => ({
       ...p,
       role: shuffledDeck[index],
       team: shuffledDeck[index].team
     }));
 
-    // Update DB
     for (const p of updates) {
        await supabase.from('players').update({ role: p.role, team: p.team, condition_met: false }).eq('id', p.id);
     }
 
-    // Start Round 1
     const endTime = new Date();
     endTime.setSeconds(endTime.getSeconds() + currentRoom.settings.round_lengths[0]);
 
@@ -239,50 +272,29 @@ export default function App() {
     await supabase.from('rooms').update({ winner: team, status: GameStatus.FINISHED }).eq('code', currentRoom?.code);
   };
 
+  const resetGame = async () => {
+      if(!currentRoom) return;
+      // Reset Room
+      await supabase.from('rooms').update({
+          status: GameStatus.LOBBY,
+          current_round: 0,
+          round_end_time: null,
+          winner: null
+      }).eq('code', currentRoom.code);
+      
+      // Reset Players
+      const { error } = await supabase.from('players')
+          .update({ role: null, team: Team.GREY, is_revealed: false, condition_met: false })
+          .eq('room_code', currentRoom.code)
+          .eq('is_god', false);
+
+      if(error) console.error(error);
+  };
+
   const toggleDebug = async () => {
       if(!currentRoom) return;
       await supabase.from('rooms').update({ settings: { ...currentRoom.settings, debug_mode: !currentRoom.settings.debug_mode } }).eq('code', currentRoom.code);
   }
-
-  // --- Player Actions ---
-  const revealToPlayer = async (targetId: string) => {
-      if (!currentPlayer?.role) return;
-      const target = players.find(p => p.id === targetId);
-      if (!target || !target.role) return;
-
-      // Logic: If I am "related" to Target, condition met.
-      const myRole = currentPlayer.role;
-      const targetRole = target.role;
-
-      let myConditionMet = currentPlayer.condition_met;
-      let targetConditionMet = target.condition_met;
-      let updateNeeded = false;
-
-      // Check Forward Link (Me -> Target)
-      if (myRole.relatedRoleId && myRole.relatedRoleId === targetRole.id) {
-          myConditionMet = true;
-          updateNeeded = true;
-          alert(`Success! You found ${target.name} (${targetRole.name}).`);
-      } else {
-          alert(`You revealed to ${target.name}. They are: ${targetRole.name}`);
-      }
-
-      // Check Reverse Link (Target -> Me) - if mutual reveal implies mutual success
-      if (targetRole.relatedRoleId && targetRole.relatedRoleId === myRole.id) {
-          targetConditionMet = true;
-          updateNeeded = true;
-      }
-
-      if (updateNeeded) {
-          // Ideally use RPC, but client-side update for prototype:
-          if (myConditionMet !== currentPlayer.condition_met) {
-              await supabase.from('players').update({ condition_met: true }).eq('id', currentPlayer.id);
-          }
-          if (targetConditionMet !== target.condition_met) {
-              await supabase.from('players').update({ condition_met: true }).eq('id', target.id);
-          }
-      }
-  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -292,282 +304,312 @@ export default function App() {
 
   // --- Views ---
 
-  if (view === 'LANDING') {
+  // 1. Role Selection
+  if (view === 'ROLE_SELECT') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-900 text-white relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-rose-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-
-        <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-blue-500 mb-2 tracking-tighter z-10">TWO ROOMS</h1>
-        <h2 className="text-4xl font-black text-white mb-10 tracking-widest z-10">BOOM</h2>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-50 text-slate-800">
+        <h1 className="text-4xl font-black mb-12 tracking-tight">两室<span className="text-red-500">一弹</span></h1>
         
-        <div className="w-full max-w-sm space-y-4 z-10 backdrop-blur-sm bg-slate-800/50 p-8 rounded-2xl border border-slate-700">
-          <input 
-            type="text" 
-            placeholder="Enter Your Name" 
-            className="w-full p-4 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-rose-500 outline-none transition text-center font-bold"
-            value={playerName}
-            onChange={e => setPlayerName(e.target.value)}
-          />
-          <input 
-            type="text" 
-            placeholder="ROOM CODE" 
-            className="w-full p-4 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-blue-500 outline-none transition uppercase text-center font-mono tracking-widest"
-            value={roomCode}
-            onChange={e => setRoomCode(e.target.value.toUpperCase())}
-          />
-          
-          <button 
-            disabled={loading}
-            onClick={() => joinRoom(false)} 
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 p-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 active:scale-95">
-            {loading ? 'Connecting...' : 'Join Game'}
-          </button>
-          
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-slate-700"></div>
-            <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-mono">HOST OPTIONS</span>
-            <div className="flex-grow border-t border-slate-700"></div>
-          </div>
+        <div className="w-full max-w-sm space-y-4">
+            <button 
+                onClick={() => { setRoleMode('PLAYER'); setView('PLAYER_NAME'); }}
+                className="w-full bg-white border-2 border-slate-200 p-8 rounded-3xl text-xl font-bold shadow-sm hover:border-blue-500 hover:text-blue-600 transition flex items-center justify-between group"
+            >
+                <span>我是玩家</span>
+                <span className="group-hover:translate-x-1 transition">→</span>
+            </button>
+            <button 
+                onClick={() => { setRoleMode('GOD'); setView('CODE_ENTRY'); }}
+                className="w-full bg-slate-900 text-white p-8 rounded-3xl text-xl font-bold shadow-lg hover:bg-slate-800 transition flex items-center justify-between group"
+            >
+                <span>我是上帝</span>
+                <span className="group-hover:translate-x-1 transition">→</span>
+            </button>
+        </div>
+      </div>
+    );
+  }
 
-          <button 
-            disabled={loading}
-            onClick={() => joinRoom(true)} 
-            className="w-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold transition text-slate-300 text-sm active:scale-95">
-            Create Room as God
-          </button>
-          
-          {errorMsg && (
-            <div className="bg-red-900/50 border border-red-500/50 p-3 rounded text-red-200 text-sm text-center">
-                {errorMsg}
-                {errorMsg.includes("Database") && <div className="mt-2 text-xs text-red-300 underline cursor-pointer" onClick={() => alert("Run the SQL in SUPABASE_SETUP.md")}>View Setup Instructions</div>}
+  // 2. Player Name Input
+  if (view === 'PLAYER_NAME') {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-50">
+            <div className="w-full max-w-sm">
+                <button onClick={() => setView('ROLE_SELECT')} className="mb-8 text-slate-400 font-bold text-sm">← 返回</button>
+                <h2 className="text-2xl font-bold mb-6 text-slate-800">你的名字?</h2>
+                <input 
+                    autoFocus
+                    type="text" 
+                    value={playerName} 
+                    onChange={e => setPlayerName(e.target.value)} 
+                    placeholder="输入昵称..." 
+                    className="w-full p-6 text-2xl font-bold bg-white rounded-2xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 outline-none transition text-center"
+                />
+                <button 
+                    disabled={!playerName.trim()}
+                    onClick={() => setView('CODE_ENTRY')}
+                    className="w-full mt-6 bg-blue-600 text-white p-5 rounded-2xl font-bold text-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-blue-200"
+                >
+                    下一步
+                </button>
             </div>
-          )}
         </div>
-      </div>
-    );
+      );
   }
 
-  // --- Main Game Rendering ---
-  
-  if (currentRoom?.status === GameStatus.LOBBY && !currentPlayer?.is_god) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-slate-900">
-        <h2 className="text-3xl font-bold mb-4 text-white">Waiting for God...</h2>
-        <div className="animate-bounce text-6xl mb-8">⏳</div>
-        <p className="text-slate-400 font-mono mb-8">Room Code: <span className="text-white font-bold">{currentRoom.code}</span></p>
-        <div className="flex flex-wrap justify-center gap-2 max-w-md">
-            {players.map(p => (
-                <span key={p.id} className={`px-4 py-2 rounded-full text-sm font-bold border ${p.is_god ? 'bg-yellow-900/30 border-yellow-600 text-yellow-500' : 'bg-slate-800 border-slate-700 text-slate-300'}`}>
-                    {p.name} {p.is_god ? '👑' : ''}
-                </span>
-            ))}
+  // 3. Code Entry
+  if (view === 'CODE_ENTRY') {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-50">
+            <button onClick={() => setView(roleMode === 'GOD' ? 'ROLE_SELECT' : 'PLAYER_NAME')} className="absolute top-8 left-8 text-slate-400 font-bold text-sm">← 取消</button>
+            <Keypad 
+                label={roleMode === 'GOD' ? '创建/进入房间' : '输入房间号'}
+                value={roomCode}
+                onInput={handleKeypadInput}
+                onDelete={handleKeypadDelete}
+                onCancel={() => setRoomCode('')}
+                onConfirm={joinRoom}
+            />
+            {loading && <div className="mt-4 text-slate-500 font-medium animate-pulse">连接中...</div>}
         </div>
-      </div>
-    );
+      );
   }
 
+  // --- Main Game Logic Rendering ---
+
+  // Game End Effects
   if (currentRoom?.status === GameStatus.FINISHED && currentRoom.winner) {
+      if (currentPlayer?.is_god) {
+          // God sees the result and a reset button
+          return (
+              <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center z-50 relative">
+                   <h1 className={`text-6xl font-black mb-4 ${currentRoom.winner === Team.RED ? 'text-red-500' : 'text-blue-500'}`}>
+                       {currentRoom.winner === Team.RED ? '红队胜利' : '蓝队胜利'}
+                   </h1>
+                   <p className="text-slate-400 mb-12">本局游戏已结束</p>
+                   <button 
+                    onClick={resetGame}
+                    className="bg-white text-slate-900 px-8 py-4 rounded-full font-bold text-xl hover:scale-105 transition shadow-2xl"
+                   >
+                       再来一局 ↺
+                   </button>
+              </div>
+          );
+      }
       if (currentRoom.winner === Team.RED) return <BombExplosion />;
       if (currentRoom.winner === Team.BLUE) return <MockeryEffect />;
+  }
+
+  // Lobby (Player View)
+  if (currentRoom?.status === GameStatus.LOBBY && !currentPlayer?.is_god) {
+    return (
+      <div className="flex flex-col items-center min-h-screen p-6 bg-slate-50">
+        <div className="w-full max-w-md mt-12 bg-white rounded-3xl p-8 shadow-xl border border-slate-100 text-center">
+            <h2 className="text-xl font-bold text-slate-400 uppercase tracking-widest mb-2">等待开始</h2>
+            <div className="text-5xl font-mono font-black text-slate-900 mb-8">{currentRoom.code}</div>
+            
+            <div className="flex flex-wrap justify-center gap-2">
+                {players.map(p => (
+                    <span key={p.id} className={`px-3 py-1 rounded-full text-xs font-bold border ${p.is_god ? 'bg-yellow-100 border-yellow-200 text-yellow-700' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
+                        {p.name} {p.is_god ? '👑' : ''}
+                    </span>
+                ))}
+            </div>
+            <div className="mt-8 text-sm text-slate-400 animate-pulse">上帝正在配置游戏...</div>
+        </div>
+      </div>
+    );
   }
 
   // --- God View ---
   if (currentPlayer?.is_god) {
     return (
-      <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col">
-        {/* God Header */}
-        <header className="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-lg">
-            <div>
-                <h1 className="text-lg font-black text-yellow-500 flex items-center gap-2">
-                    <span>👑</span> GOD MODE
-                </h1>
-                <div className="text-xs text-slate-400 font-mono">CODE: {currentRoom?.code}</div>
+      <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans">
+        {/* Header */}
+        <header className="bg-white p-4 shadow-sm flex justify-between items-center border-b border-slate-200 sticky top-0 z-50">
+            <div className="flex items-center gap-3">
+                <div className="bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded">GOD</div>
+                <div className="font-mono font-bold text-xl text-slate-900">{currentRoom?.code}</div>
             </div>
             <div className="text-right">
-                <div className={`text-2xl font-mono font-bold ${currentRoom?.status === GameStatus.PLAYING ? 'text-green-400' : 'text-slate-500'}`}>
-                    {currentRoom?.status === GameStatus.PLAYING ? formatTime(timeLeft) : 'PAUSED'}
-                </div>
-                <div className="text-xs text-slate-400">Round {currentRoom?.current_round} / {currentRoom?.settings.rounds}</div>
+                 <div className={`text-xl font-mono font-bold ${currentRoom?.status === GameStatus.PLAYING ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {currentRoom?.status === GameStatus.PLAYING ? formatTime(timeLeft) : currentRoom?.status}
+                 </div>
             </div>
         </header>
 
-        <div className="flex-grow p-4 space-y-6 overflow-y-auto">
+        <div className="flex-grow p-4 space-y-4 overflow-y-auto pb-20">
             
-            {/* LOBBY: Role Configuration */}
+            {/* LOBBY: Deck Builder */}
             {currentRoom?.status === GameStatus.LOBBY && (
-                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    <div className="bg-slate-700/50 p-4 border-b border-slate-700 flex justify-between items-center">
-                        <h3 className="font-bold text-white">Deck Configuration</h3>
-                        <span className="text-xs bg-indigo-900 text-indigo-200 px-2 py-1 rounded">
-                            {currentRoom.custom_roles.length} Special Roles Selected
-                        </span>
-                    </div>
-                    
-                    <div className="p-4 space-y-4">
-                        {/* Selected Roles List */}
+                <div className="space-y-4">
+                    {/* Active Deck */}
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-slate-800">当前卡牌池</h3>
+                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{currentRoom.custom_roles.length} 张</span>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                             {currentRoom.custom_roles.map((role, idx) => (
-                                <div key={idx} className={`flex items-center gap-2 pl-3 pr-2 py-1 rounded-lg border text-sm ${role.team === Team.BLUE ? 'bg-blue-900/30 border-blue-700 text-blue-200' : role.team === Team.RED ? 'bg-red-900/30 border-red-700 text-red-200' : 'bg-slate-700 border-slate-600 text-slate-300'}`}>
-                                    <span>{role.name}</span>
+                                <div key={idx} className={`relative group pl-3 pr-8 py-2 rounded-lg text-sm font-bold border ${role.team === Team.BLUE ? 'bg-blue-50 border-blue-200 text-blue-700' : role.team === Team.RED ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
+                                    {role.name}
                                     {!role.isKeyRole && (
                                         <button 
-                                            onClick={() => {
-                                                const newRoles = currentRoom.custom_roles.filter((_, i) => i !== idx);
-                                                updateRoles(newRoles);
-                                            }}
-                                            className="hover:bg-black/20 rounded p-0.5"
+                                            onClick={() => updateRoles(currentRoom.custom_roles.filter((_, i) => i !== idx))}
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-500"
                                         >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     )}
                                 </div>
                             ))}
                         </div>
+                    </div>
 
-                        {/* Add Role Section */}
-                        <div className="pt-4 border-t border-slate-700">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Add Special Roles</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                                {BASE_ROLES.filter(r => !r.isKeyRole && r.id !== 'blue_team' && r.id !== 'red_team').map(role => (
-                                    <button 
-                                        key={role.id}
-                                        onClick={() => updateRoles([...currentRoom.custom_roles, role])}
-                                        className="text-left p-2 rounded bg-slate-700/50 hover:bg-slate-700 border border-slate-600 flex items-center justify-between group transition"
-                                    >
-                                        <span className="text-sm font-medium">{role.name}</span>
-                                        <PlusIcon />
-                                    </button>
-                                ))}
-                            </div>
+                    {/* Add Standard Roles */}
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                        <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">添加标准角色</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                             {BASE_ROLES.filter(r => !r.isKeyRole && r.id !== 'blue_team' && r.id !== 'red_team').map(role => (
+                                <button 
+                                    key={role.id}
+                                    onClick={() => updateRoles([...currentRoom.custom_roles, role])}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-left transition"
+                                >
+                                    <span className="text-sm font-medium text-slate-700">{role.name}</span>
+                                    <span className="text-slate-400">+</span>
+                                </button>
+                             ))}
                         </div>
+                    </div>
 
-                        {/* Custom Role Creator */}
-                        <details className="pt-2">
-                            <summary className="text-xs font-bold text-indigo-400 cursor-pointer uppercase mb-2">Create Custom Role +</summary>
-                            <form 
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    const form = e.target as HTMLFormElement;
-                                    const name = (form.elements.namedItem('cName') as HTMLInputElement).value;
-                                    const desc = (form.elements.namedItem('cDesc') as HTMLInputElement).value;
-                                    const team = (form.elements.namedItem('cTeam') as HTMLSelectElement).value as Team;
-                                    
+                    {/* Create Custom Role */}
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                        <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">创建自定义卡牌</h3>
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                             {/* Card Preview */}
+                             <div className={`p-4 rounded-xl border-l-4 mb-4 bg-white shadow-sm ${customRoleTeam === Team.RED ? 'border-red-500' : customRoleTeam === Team.BLUE ? 'border-blue-500' : 'border-slate-400'}`}>
+                                 <div className="text-xs font-bold uppercase text-slate-400 mb-1">{customRoleTeam === Team.RED ? '红队' : customRoleTeam === Team.BLUE ? '蓝队' : '灰队'}</div>
+                                 <div className="font-black text-xl text-slate-800 mb-1">{customRoleName || '角色名称'}</div>
+                                 <div className="text-xs text-slate-500">{customRoleDesc || '描述...'}</div>
+                                 {customRoleWin && <div className="mt-2 text-xs font-bold text-slate-700">胜利条件: {customRoleWin}</div>}
+                             </div>
+
+                             <div className="flex gap-2">
+                                <input 
+                                    value={customRoleName}
+                                    onChange={e => setCustomRoleName(e.target.value)}
+                                    placeholder="名称" 
+                                    className="flex-1 p-2 rounded-lg border border-slate-300 text-sm"
+                                />
+                                <select 
+                                    value={customRoleTeam}
+                                    onChange={e => setCustomRoleTeam(e.target.value as Team)}
+                                    className="p-2 rounded-lg border border-slate-300 text-sm"
+                                >
+                                    <option value={Team.BLUE}>蓝队</option>
+                                    <option value={Team.RED}>红队</option>
+                                    <option value={Team.GREY}>灰队</option>
+                                </select>
+                             </div>
+                             <input 
+                                value={customRoleDesc}
+                                onChange={e => setCustomRoleDesc(e.target.value)}
+                                placeholder="角色能力/描述" 
+                                className="w-full p-2 rounded-lg border border-slate-300 text-sm"
+                             />
+                             <input 
+                                value={customRoleWin}
+                                onChange={e => setCustomRoleWin(e.target.value)}
+                                placeholder="胜利条件 (可选)" 
+                                className="w-full p-2 rounded-lg border border-slate-300 text-sm"
+                             />
+                             <button 
+                                onClick={() => {
+                                    if(!customRoleName) return;
                                     const newRole: Role = {
                                         id: `custom_${Date.now()}`,
-                                        name,
-                                        description: desc,
-                                        team,
+                                        name: customRoleName,
+                                        description: customRoleDesc,
+                                        team: customRoleTeam,
                                         isKeyRole: false,
-                                        isCustom: true
+                                        isCustom: true,
+                                        winCondition: customRoleWin
                                     };
                                     updateRoles([...currentRoom.custom_roles, newRole]);
-                                    form.reset();
+                                    setCustomRoleName('');
+                                    setCustomRoleDesc('');
+                                    setCustomRoleWin('');
                                 }}
-                                className="bg-slate-900/50 p-3 rounded space-y-2 border border-slate-700"
-                            >
-                                <div className="flex gap-2">
-                                    <input name="cName" placeholder="Role Name" required className="bg-slate-800 p-2 rounded text-sm w-2/3 border border-slate-600" />
-                                    <select name="cTeam" className="bg-slate-800 p-2 rounded text-sm w-1/3 border border-slate-600">
-                                        <option value={Team.BLUE}>Blue</option>
-                                        <option value={Team.RED}>Red</option>
-                                        <option value={Team.GREY}>Grey</option>
-                                    </select>
-                                </div>
-                                <textarea name="cDesc" placeholder="Description/Win Condition" required className="bg-slate-800 p-2 rounded text-sm w-full border border-slate-600" rows={2}></textarea>
-                                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-sm font-bold">Add Custom Role</button>
-                            </form>
-                        </details>
+                                className="w-full bg-slate-900 text-white py-2 rounded-lg font-bold text-sm hover:bg-slate-800"
+                             >
+                                 添加至卡组
+                             </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Game Controls */}
-            <div className="grid grid-cols-1 gap-4">
-                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
-                    <h3 className="text-slate-400 text-xs mb-3 font-bold uppercase tracking-widest">Flow Control</h3>
-                    <div className="flex flex-col gap-3">
-                        {currentRoom?.status === GameStatus.LOBBY && (
-                            <button onClick={startGame} className="bg-emerald-600 text-white p-4 rounded-lg font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 active:scale-95 transition">
-                                START GAME ({players.filter(p=>!p.is_god).length} Players)
-                            </button>
-                        )}
-                        {currentRoom?.status === GameStatus.PLAYING && (
-                            <button onClick={pauseRound} className="bg-amber-600 text-white p-4 rounded-lg font-bold hover:bg-amber-500 shadow-lg shadow-amber-900/20 active:scale-95 transition flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                PAUSE / END ROUND
-                            </button>
-                        )}
-                        {currentRoom?.status === GameStatus.PAUSED && (
-                            <button onClick={nextRound} className="bg-blue-600 text-white p-4 rounded-lg font-bold hover:bg-blue-500 shadow-lg shadow-blue-900/20 active:scale-95 transition">
-                                START ROUND {currentRoom.current_round + 1} ({Math.floor((currentRoom.settings.round_lengths[currentRoom.current_round] || 60)/60)}m)
-                            </button>
-                        )}
-                        <button onClick={toggleDebug} className={`p-2 rounded text-xs border transition ${currentRoom?.settings.debug_mode ? 'bg-purple-900/50 border-purple-500 text-purple-200' : 'border-slate-600 text-slate-500'}`}>
-                            {currentRoom?.settings.debug_mode ? 'Debug Mode: ENABLED (Allows odd/single players)' : 'Debug Mode: DISABLED'}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-50">
+                <div className="flex gap-2 max-w-md mx-auto">
+                    {currentRoom?.status === GameStatus.LOBBY && (
+                        <button onClick={startGame} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-green-200 active:scale-95 transition">
+                            开始游戏 ({players.filter(p=>!p.is_god).length} 人)
                         </button>
-                    </div>
-                </div>
-
-                {/* Force End / Testing */}
-                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h3 className="text-slate-400 text-xs mb-3 font-bold uppercase tracking-widest">Force Result</h3>
-                    <div className="flex gap-3">
-                        <button onClick={() => setWinner(Team.RED)} className="flex-1 bg-red-900/50 border border-red-600 p-3 rounded text-red-200 hover:bg-red-900 font-bold transition">
-                            Red Wins (Boom)
+                    )}
+                    {currentRoom?.status === GameStatus.PLAYING && (
+                        <button onClick={pauseRound} className="flex-1 bg-amber-500 text-white p-3 rounded-xl font-bold shadow-lg shadow-amber-200 active:scale-95 transition">
+                            暂停 / 结束回合
                         </button>
-                        <button onClick={() => setWinner(Team.BLUE)} className="flex-1 bg-blue-900/50 border border-blue-600 p-3 rounded text-blue-200 hover:bg-blue-900 font-bold transition">
-                            Blue Wins (Safe)
+                    )}
+                    {currentRoom?.status === GameStatus.PAUSED && (
+                        <button onClick={nextRound} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+                            开始第 {currentRoom.current_round + 1} 回合
                         </button>
-                    </div>
+                    )}
+                    
+                    {/* Debug Toggle */}
+                     <button onClick={toggleDebug} className={`px-3 rounded-xl border font-bold text-xs ${currentRoom?.settings.debug_mode ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                        {currentRoom?.settings.debug_mode ? '测试' : '正式'}
+                    </button>
                 </div>
             </div>
 
-            {/* Players List */}
-            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden mb-12">
-                <div className="bg-slate-700/50 p-3 font-bold text-sm text-slate-300">Player Status</div>
-                <div className="divide-y divide-slate-700">
-                    {players.filter(p => !p.is_god).map(p => (
-                        <div key={p.id} className="p-3 flex justify-between items-center">
-                            <span className="font-medium text-white">{p.name}</span>
-                            <div className="flex items-center gap-2">
-                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-red-900 text-red-200' : p.team === Team.BLUE ? 'bg-blue-900 text-blue-200' : 'bg-slate-600 text-slate-300'}`}>
-                                    {p.role?.name || 'Waiting'}
-                                </span>
-                                {p.condition_met && <span className="text-emerald-400 bg-emerald-900/30 rounded-full px-2 py-0.5 text-xs border border-emerald-600">Matched</span>}
-                            </div>
-                        </div>
-                    ))}
-                    {players.length === 0 && <div className="p-4 text-center text-slate-500 italic">No players joined yet</div>}
+            {/* Winner Override (Hidden in Details) */}
+            <details className="text-center pb-24">
+                <summary className="text-xs text-slate-400 font-bold uppercase tracking-widest cursor-pointer mb-4">强制结束游戏</summary>
+                <div className="flex gap-2 max-w-md mx-auto">
+                    <button onClick={() => setWinner(Team.RED)} className="flex-1 border-2 border-red-500 text-red-500 p-2 rounded-lg font-bold text-sm hover:bg-red-50">红队胜</button>
+                    <button onClick={() => setWinner(Team.BLUE)} className="flex-1 border-2 border-blue-500 text-blue-500 p-2 rounded-lg font-bold text-sm hover:bg-blue-50">蓝队胜</button>
                 </div>
-            </div>
+            </details>
         </div>
       </div>
     );
   }
 
-  // --- Regular Player View ---
+  // --- Regular Player View (Game) ---
   if (!currentPlayer || !currentPlayer.role) return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-10 text-center">
-          <div className="animate-spin text-4xl mb-4">🎲</div>
-          <h2 className="text-xl font-bold">Game Starting...</h2>
-          <p className="text-slate-400">Receiving Role Card</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-10 text-center">
+          <div className="animate-spin text-4xl mb-4 text-slate-300">↻</div>
+          <h2 className="text-xl font-bold text-slate-800">游戏开始中...</h2>
+          <p className="text-slate-500">正在分发身份卡牌</p>
       </div>
   );
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-1000 ${currentPlayer.team === Team.RED ? 'bg-red-950' : currentPlayer.team === Team.BLUE ? 'bg-blue-950' : 'bg-slate-900'}`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${currentPlayer.team === Team.RED ? 'bg-red-50' : currentPlayer.team === Team.BLUE ? 'bg-blue-50' : 'bg-slate-50'}`}>
       
       {/* Top Bar */}
-      <div className="bg-black/20 p-4 flex justify-between items-center backdrop-blur-md sticky top-0 z-40 border-b border-white/5">
+      <div className="bg-white/80 backdrop-blur-md p-4 flex justify-between items-center sticky top-0 z-40 border-b border-slate-200">
         <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full ${currentPlayer.team === Team.RED ? 'bg-red-600' : currentPlayer.team === Team.BLUE ? 'bg-blue-600' : 'bg-slate-600'}`}>
+            <div className={`p-2 rounded-full text-white ${currentPlayer.team === Team.RED ? 'bg-red-500' : currentPlayer.team === Team.BLUE ? 'bg-blue-500' : 'bg-slate-500'}`}>
                  <UserIcon />
             </div>
-            <span className="font-bold text-lg truncate max-w-[120px] shadow-sm">{currentPlayer.name}</span>
+            <span className="font-bold text-slate-800 text-lg truncate max-w-[120px]">{currentPlayer.name}</span>
         </div>
-        <div className={`flex items-center gap-2 font-mono text-2xl font-black ${timeLeft < 10 && timeLeft > 0 ? 'text-red-500 animate-pulse scale-110' : 'text-white'}`}>
+        <div className={`flex items-center gap-2 font-mono text-2xl font-black ${timeLeft < 10 && timeLeft > 0 ? 'text-red-500 animate-pulse' : 'text-slate-800'}`}>
             <ClockIcon />
             {formatTime(timeLeft)}
         </div>
@@ -575,59 +617,69 @@ export default function App() {
 
       {/* Main Card Area */}
       <div className="flex-grow flex items-center justify-center p-6 perspective-1000 overflow-hidden relative">
-        {/* Ambient background glow based on team */}
-        <div className={`absolute inset-0 opacity-20 blur-3xl ${currentPlayer.team === Team.RED ? 'bg-red-600' : currentPlayer.team === Team.BLUE ? 'bg-blue-600' : 'bg-slate-600'}`}></div>
-
         <div 
             onClick={() => setIsFlipped(!isFlipped)}
-            className={`relative w-full max-w-sm aspect-[2/3] cursor-pointer group card-flip transition-transform duration-300 hover:scale-105 active:scale-95`}
+            className={`relative w-full max-w-sm aspect-[2/3] cursor-pointer group card-flip transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]`}
         >
             <div className={`relative w-full h-full duration-500 transform-style-3d transition-all ${isFlipped ? 'rotate-y-180' : ''}`} style={{transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'}}>
                 
-                {/* Back of Card (Hidden) */}
-                <div className="absolute inset-0 bg-slate-800 rounded-3xl border-8 border-slate-700 shadow-2xl flex flex-col items-center justify-center backface-hidden" style={{backfaceVisibility: 'hidden'}}>
-                     <div className="w-full h-full absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
-                     <div className="text-8xl mb-6 filter drop-shadow-lg">🕵️</div>
-                     <div className="text-slate-400 font-black uppercase tracking-widest text-lg border-2 border-slate-400 px-4 py-2 rounded-lg">Tap to Reveal</div>
-                     <div className="mt-8 text-slate-500 text-xs uppercase tracking-widest">Secret Identity</div>
+                {/* Back of Card (Hidden State) */}
+                <div className="absolute inset-0 bg-white rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center backface-hidden" style={{backfaceVisibility: 'hidden'}}>
+                     {/* Pattern */}
+                     <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIi8+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')]"></div>
+                     
+                     <div className="z-10 bg-slate-900 text-white rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg mb-6">?</div>
+                     <div className="z-10 text-slate-900 font-black uppercase tracking-widest text-lg border-2 border-slate-900 px-6 py-2 rounded-lg">点击查看身份</div>
                 </div>
 
                 {/* Front of Card (Role) */}
                 <div className="absolute inset-0 bg-white text-slate-900 rounded-3xl border-8 border-white shadow-2xl overflow-hidden backface-hidden flex flex-col" style={{backfaceVisibility: 'hidden', transform: 'rotateY(180deg)'}}>
-                    {/* Header */}
-                    <div className={`h-6 w-full ${currentPlayer.team === Team.RED ? 'bg-red-600' : currentPlayer.team === Team.BLUE ? 'bg-blue-600' : 'bg-slate-400'}`}></div>
+                    {/* Color Header */}
+                    <div className={`h-4 w-full ${currentPlayer.team === Team.RED ? 'bg-red-500' : currentPlayer.team === Team.BLUE ? 'bg-blue-500' : 'bg-slate-500'}`}></div>
                     
-                    <div className="p-6 flex flex-col h-full relative z-10">
-                        <div className={`absolute top-0 right-0 p-6 opacity-10 text-9xl font-black pointer-events-none ${currentPlayer.team === Team.RED ? 'text-red-500' : currentPlayer.team === Team.BLUE ? 'text-blue-500' : 'text-slate-500'}`}>?</div>
+                    <div className="p-8 flex flex-col h-full relative z-10">
+                        {/* Watermark */}
+                        <div className={`absolute bottom-0 right-0 p-6 opacity-5 text-9xl font-black pointer-events-none`}>
+                            {currentPlayer.team === Team.RED ? 'RED' : currentPlayer.team === Team.BLUE ? 'BLUE' : 'GREY'}
+                        </div>
 
-                        <div className="flex justify-between items-start mb-2">
-                             <div className="text-xs font-black text-slate-400 uppercase tracking-widest">{currentPlayer.team} TEAM</div>
-                             {currentPlayer.role.isKeyRole && <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Leader</span>}
+                        <div className="flex justify-between items-start mb-4">
+                             <div className={`text-xs font-black uppercase tracking-widest px-2 py-1 rounded ${currentPlayer.team === Team.RED ? 'bg-red-100 text-red-700' : currentPlayer.team === Team.BLUE ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
+                                 {currentPlayer.team === Team.RED ? '红队' : currentPlayer.team === Team.BLUE ? '蓝队' : '灰队'}
+                             </div>
+                             {currentPlayer.role.isKeyRole && <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase">★ 领袖</span>}
                         </div>
                         
-                        <h2 className={`text-4xl font-black mb-6 leading-tight ${currentPlayer.team === Team.RED ? 'text-red-600' : currentPlayer.team === Team.BLUE ? 'text-blue-600' : 'text-slate-700'}`}>
+                        <h2 className={`text-4xl font-black mb-6 leading-tight ${currentPlayer.team === Team.RED ? 'text-red-600' : currentPlayer.team === Team.BLUE ? 'text-blue-600' : 'text-slate-800'}`}>
                             {currentPlayer.role.name}
                         </h2>
                         
-                        <div className="flex-grow">
-                            <p className="text-lg leading-relaxed font-medium text-slate-600">{currentPlayer.role.description}</p>
+                        <div className="space-y-6 flex-grow">
+                            <div>
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">角色能力</h4>
+                                <p className="text-lg font-medium text-slate-700 leading-relaxed">{currentPlayer.role.description}</p>
+                            </div>
+
+                            {currentPlayer.role.winCondition && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">胜利条件</h4>
+                                    <p className="text-sm font-bold text-slate-800">{currentPlayer.role.winCondition}</p>
+                                </div>
+                            )}
                             
                             {currentPlayer.condition_met && (
-                                <div className="mt-6 p-4 bg-emerald-100 border-2 border-emerald-400 rounded-xl text-emerald-800 flex items-center gap-3 shadow-sm animate-pulse">
-                                    <div className="bg-emerald-500 text-white rounded-full p-1">
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 flex items-center gap-3 animate-pulse">
+                                    <div className="bg-green-500 text-white rounded-full p-1">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                     </div>
-                                    <div>
-                                        <div className="font-black text-sm uppercase">Condition Met</div>
-                                        <div className="text-xs font-medium">Link Established</div>
-                                    </div>
+                                    <div className="font-bold text-sm">链接已达成</div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="mt-auto text-center">
-                            <div className="inline-block bg-slate-100 text-slate-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                                Keep hidden
+                        <div className="mt-auto text-center pt-6 border-t border-slate-100">
+                            <div className="text-slate-300 text-[10px] font-bold uppercase tracking-widest">
+                                请勿向他人展示手机屏幕
                             </div>
                         </div>
                     </div>
@@ -635,46 +687,7 @@ export default function App() {
             </div>
         </div>
       </div>
-
-      {/* Interaction Panel */}
-      <div className="bg-slate-900/60 p-5 pb-8 backdrop-blur-xl rounded-t-[2rem] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-          <h3 className="text-[10px] font-bold text-slate-500 uppercase mb-4 text-center tracking-widest">Player Actions</h3>
-          <div className="grid grid-cols-5 gap-3">
-              <button 
-                onClick={() => setIsFlipped(true)}
-                className="col-span-2 bg-slate-800 hover:bg-slate-700 p-4 rounded-xl font-bold text-sm flex flex-col items-center justify-center gap-1 transition border border-slate-700 active:bg-slate-600"
-              >
-                  <EyeIcon /> 
-                  <span className="text-xs">Show Card</span>
-              </button>
-              
-              <div className="col-span-3 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </div>
-                  <select 
-                    onChange={(e) => {
-                        if(e.target.value) {
-                            if(confirm(`REVEAL your identity to ${e.target.options[e.target.selectedIndex].text}? This cannot be undone.`)) {
-                                revealToPlayer(e.target.value);
-                                e.target.value = "";
-                            } else {
-                                e.target.value = "";
-                            }
-                        }
-                    }}
-                    className="w-full h-full bg-indigo-600 hover:bg-indigo-500 pl-10 pr-4 rounded-xl font-bold text-sm text-white appearance-none outline-none transition border border-indigo-400 active:bg-indigo-700"
-                    defaultValue=""
-                  >
-                      <option value="" disabled>Reveal to Player...</option>
-                      {players.filter(p => p.id !== currentPlayer.id && !p.is_god).map(p => (
-                          <option key={p.id} value={p.id} className="text-black bg-white">{p.name}</option>
-                      ))}
-                  </select>
-              </div>
-          </div>
-      </div>
-
+      
     </div>
   );
 }
