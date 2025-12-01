@@ -1,61 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#4d4696" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>两室一弹</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💣</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      @keyframes shake {
-        0% { transform: translate(1px, 1px) rotate(0deg); }
-        10% { transform: translate(-1px, -2px) rotate(-1deg); }
-        20% { transform: translate(-3px, 0px) rotate(1deg); }
-        30% { transform: translate(3px, 2px) rotate(0deg); }
-        40% { transform: translate(1px, -1px) rotate(1deg); }
-        50% { transform: translate(-1px, 2px) rotate(-1deg); }
-        60% { transform: translate(-3px, 1px) rotate(0deg); }
-        70% { transform: translate(3px, 1px) rotate(-1deg); }
-        80% { transform: translate(-1px, -1px) rotate(1deg); }
-        90% { transform: translate(1px, 2px) rotate(0deg); }
-        100% { transform: translate(1px, -2px) rotate(-1deg); }
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap');
+
+      body {
+        font-family: 'Noto Sans SC', sans-serif;
+        background-color: #4d4696;
+        color: #fff;
       }
-      .animate-shake {
-        animation: shake 0.5s;
-        animation-iteration-count: infinite;
+      
+      .font-traditional {
+        font-family: 'Noto Serif TC', serif;
       }
-      .card-flip {
+
+      /* Animated Background */
+      .bg-gradient-animate {
+        background: linear-gradient(-45deg, #4d4696, #3b357a, #4c4595, #2d285e);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+      }
+
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Floating Icons Animation */
+      .floating-icon {
+        position: absolute;
+        opacity: 0.1;
+        animation: float 20s infinite linear;
+        pointer-events: none;
+      }
+
+      @keyframes float {
+        0% { transform: translateY(110vh) rotate(0deg); }
+        100% { transform: translateY(-10vh) rotate(360deg); }
+      }
+
+      /* Card Flip & Shuffle */
+      .perspective-1000 {
         perspective: 1000px;
       }
-      .card-inner {
-        transition: transform 0.6s;
+      .transform-style-3d {
         transform-style: preserve-3d;
       }
-      .card-front, .card-back {
+      .backface-hidden {
         backface-visibility: hidden;
       }
-      .card-back {
+      .rotate-y-180 {
         transform: rotateY(180deg);
       }
-      .flipped {
-        transform: rotateY(180deg);
+
+      /* Vertical Text for Card */
+      .writing-vertical-rl {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
       }
-      /* Custom Scrollbar for God Mode panels */
+
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e293b; 
+        background: rgba(0,0,0,0.1); 
       }
       ::-webkit-scrollbar-thumb {
-        background: #475569; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
+        background: rgba(255,255,255,0.2); 
+        border-radius: 3px;
       }
     </style>
   <script type="importmap">
@@ -72,7 +94,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-900 text-slate-100 min-h-screen overflow-x-hidden selection:bg-rose-500 selection:text-white pb-safe">
+  <body class="min-h-screen overflow-x-hidden pb-safe bg-gradient-animate selection:bg-[#5abb2d] selection:text-white">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

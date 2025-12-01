@@ -38,13 +38,22 @@ create table players (
   is_leader boolean default false
 );
 
--- 3. Enable Realtime
+-- 3. Create Card Sets Table (New)
+create table card_sets (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  roles jsonb not null,
+  created_at timestamptz default now()
+);
+
+-- 4. Enable Realtime
 -- You must enable Realtime for these tables in the Supabase Dashboard -> Database -> Replication
 -- OR run:
 alter publication supabase_realtime add table rooms;
 alter publication supabase_realtime add table players;
+alter publication supabase_realtime add table card_sets;
 
--- 4. Row Level Security (RLS)
+-- 5. Row Level Security (RLS)
 -- For simplicity in this demo, we allow public access. 
 -- In production, you should restrict this using auth.uid().
 
@@ -53,4 +62,7 @@ create policy "Public Access Rooms" on rooms for all using (true) with check (tr
 
 alter table players enable row level security;
 create policy "Public Access Players" on players for all using (true) with check (true);
+
+alter table card_sets enable row level security;
+create policy "Public Access Card Sets" on card_sets for all using (true) with check (true);
 ```

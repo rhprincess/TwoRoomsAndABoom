@@ -7,6 +7,8 @@ export enum Team {
 
 export enum GameStatus {
   LOBBY = 'LOBBY',
+  DISTRIBUTING = 'DISTRIBUTING', // Animation phase
+  READY_TO_START = 'READY_TO_START', // Cards revealed, waiting for start
   PLAYING = 'PLAYING',
   PAUSED = 'PAUSED', // Between rounds
   FINISHED = 'FINISHED'
@@ -14,15 +16,22 @@ export enum GameStatus {
 
 export interface Role {
   id: string;
-  name: string;
+  name: string; // Traditional Chinese
   description: string;
   team: Team;
   isKeyRole: boolean; // President or Bomber
-  relatedRoleId?: string; // e.g., Shy Guy A needs Shy Guy B
+  relatedRoleId?: string;
   relatedRoleName?: string;
   isCustom?: boolean;
-  winCondition?: string; // Explicit win condition text
-  constraints?: string; // Usage constraints (e.g., "Must show card")
+  winCondition?: string;
+  constraints?: string;
+}
+
+export interface CardSet {
+  id: string;
+  name: string;
+  roles: Role[];
+  created_at?: string;
 }
 
 export interface Player {
@@ -35,7 +44,6 @@ export interface Player {
   is_revealed: boolean;
   condition_met: boolean; // For linked roles
   joined_at: string;
-  // New fields
   room_number: 1 | 2 | null;
   is_leader: boolean;
 }

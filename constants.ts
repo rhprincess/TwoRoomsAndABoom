@@ -1,12 +1,24 @@
 
 import { Role, Team } from './types';
 
+export const COLORS = {
+  BG: '#4d4696',
+  SUCCESS_BG: '#5abb2d',
+  SUCCESS_TEXT: '#185021',
+  BLUE_BG: '#82a0d2',
+  BLUE_TEXT: '#4c4595',
+  RED_BG: '#de0029',
+  RED_TEXT: '#4c1417',
+  GREY_BG: '#9b9794',
+  GREY_TEXT: '#656362',
+};
+
 export const DEFAULT_ROUND_LENGTHS = [300, 180, 60]; // 5m, 3m, 1m in seconds
 
 export const BASE_ROLES: Role[] = [
   {
     id: 'president',
-    name: '总统',
+    name: '總統',
     description: '蓝队领袖。你必须避开炸弹人。如果游戏结束时你和炸弹客在同一个房间，你死亡，蓝队失败。',
     team: Team.BLUE,
     isKeyRole: true,
@@ -14,7 +26,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'bomber',
-    name: '炸弹客',
+    name: '炸彈客',
     description: '红队领袖。你必须找到总统。如果游戏结束时你和总统在同一个房间，你引爆炸弹，红队胜利。',
     team: Team.RED,
     isKeyRole: true,
@@ -22,7 +34,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'blue_team',
-    name: '蓝队特工',
+    name: '藍隊特工',
     description: '保护总统。让炸弹人远离总统。如果总统存活，你获胜。',
     team: Team.BLUE,
     isKeyRole: false,
@@ -30,7 +42,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'red_team',
-    name: '红队特工',
+    name: '紅隊特工',
     description: '帮助炸弹人找到总统。如果炸弹人炸死总统，你获胜。',
     team: Team.RED,
     isKeyRole: false,
@@ -58,7 +70,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'gambler',
-    name: '赌徒',
+    name: '賭徒',
     description: '在游戏结束时，你需要大声宣布你认为获胜的队伍。如果猜对，你获胜。',
     team: Team.GREY,
     isKeyRole: false,
@@ -66,7 +78,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'doctor',
-    name: '医生',
+    name: '醫生',
     description: '蓝队。你是总统的亲信。分享你的卡牌来建立信任。',
     team: Team.BLUE,
     isKeyRole: false,
@@ -74,15 +86,15 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'engineer',
-    name: '工程师',
-    description: '红队。你与炸弹人合作。分享你的卡牌来协调行动。',
+    name: '工程師',
+    description: '紅隊工程師',
     team: Team.RED,
     isKeyRole: false,
     winCondition: '总统死亡'
   },
   {
     id: 'spy',
-    name: '间谍',
+    name: '間諜',
     description: '红队。你实际上是红队的人，但在卡牌上可能伪装成蓝队（口头撒谎）。试图渗透蓝队。',
     team: Team.RED,
     isKeyRole: false,
@@ -90,7 +102,7 @@ export const BASE_ROLES: Role[] = [
   },
   {
     id: 'negotiator',
-    name: '谈判专家',
+    name: '談判專家',
     description: '灰队。如果游戏结束时你被作为人质（被交换到对立房间），你获胜。',
     team: Team.GREY,
     isKeyRole: false,
