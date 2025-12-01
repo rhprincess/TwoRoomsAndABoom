@@ -5,12 +5,18 @@ export const COLORS = {
   BG: '#4d4696',
   SUCCESS_BG: '#5abb2d',
   SUCCESS_TEXT: '#185021',
-  BLUE_BG: '#82a0d2',
-  BLUE_TEXT: '#4c4595',
-  RED_BG: '#de0029',
-  RED_TEXT: '#4c1417',
-  GREY_BG: '#9b9794',
-  GREY_TEXT: '#656362',
+  
+  // Blue Team
+  BLUE_LIGHT: '#82a0d2',
+  BLUE_DARK: '#4c4595',
+  
+  // Red Team
+  RED_LIGHT: '#ff8fa3',
+  RED_DARK: '#8a001a', // Deeper red for text/bg contrast
+  
+  // Grey Team
+  GREY_LIGHT: '#d1d1d1',
+  GREY_DARK: '#4a4a4a',
 };
 
 export const DEFAULT_ROUND_LENGTHS = [300, 180, 60]; // 5m, 3m, 1m in seconds
@@ -51,7 +57,7 @@ export const BASE_ROLES: Role[] = [
   {
     id: 'shy_guy_a',
     name: '害羞鬼 (A)',
-    description: '找到害羞鬼 (B)。你们必须互相展示身份卡牌才能获胜。',
+    description: '找到害羞鬼 (B)。你们必须互相输入核对码确认身份才能获胜。',
     team: Team.GREY,
     isKeyRole: false,
     relatedRoleId: 'shy_guy_b',
@@ -61,7 +67,7 @@ export const BASE_ROLES: Role[] = [
   {
     id: 'shy_guy_b',
     name: '害羞鬼 (B)',
-    description: '找到害羞鬼 (A)。你们必须互相展示身份卡牌才能获胜。',
+    description: '找到害羞鬼 (A)。你们必须互相输入核对码确认身份才能获胜。',
     team: Team.GREY,
     isKeyRole: false,
     relatedRoleId: 'shy_guy_a',
@@ -87,7 +93,7 @@ export const BASE_ROLES: Role[] = [
   {
     id: 'engineer',
     name: '工程師',
-    description: '紅隊工程師',
+    description: '红队工程师。帮助红队获胜。',
     team: Team.RED,
     isKeyRole: false,
     winCondition: '总统死亡'

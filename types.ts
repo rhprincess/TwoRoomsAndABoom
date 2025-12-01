@@ -46,6 +46,7 @@ export interface Player {
   joined_at: string;
   room_number: 1 | 2 | null;
   is_leader: boolean;
+  verification_code?: string; // Random 6-digit code for linked roles
 }
 
 export interface Room {

@@ -35,7 +35,8 @@ create table players (
   condition_met boolean default false,
   joined_at timestamptz default now(),
   room_number int,
-  is_leader boolean default false
+  is_leader boolean default false,
+  verification_code text
 );
 
 -- 3. Create Card Sets Table (New)

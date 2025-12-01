@@ -38,14 +38,17 @@
       /* Floating Icons Animation */
       .floating-icon {
         position: absolute;
+        top: 0;
+        left: 0;
         opacity: 0.1;
-        animation: float 20s infinite linear;
+        animation: floatUp 20s infinite linear;
         pointer-events: none;
+        will-change: transform;
       }
 
-      @keyframes float {
+      @keyframes floatUp {
         0% { transform: translateY(110vh) rotate(0deg); }
-        100% { transform: translateY(-10vh) rotate(360deg); }
+        100% { transform: translateY(-20vh) rotate(360deg); }
       }
 
       /* Card Flip & Shuffle */
