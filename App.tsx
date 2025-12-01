@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role, CardSet } from './types';
@@ -10,10 +11,14 @@ const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w
 const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>;
 const CrownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 111.772.954l-2.463 4.621 1.991.995a1 1 0 11-.894 1.79l-1.233-.616 1.733 5.426a1 1 0 01-1.429 1.285l-4.59.816-1.554-4.867 1.233.617a1 1 0 01.894-1.79l-1.991-.995-2.463-4.621a1 1 0 111.772-.954l1.699 3.181L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552a1 1 0 01-1.285.592l-1.636-.596a1 1 0 11.697-1.874l1.248.455.795-2.486a1 1 0 111.9.957zM15 10.274l.818 2.552a1 1 0 001.285.592l1.636-.596a1 1 0 00-.697-1.874l-1.248.455-.795-2.486a1 1 0 00-1.9.957z" clipRule="evenodd" /></svg>;
 const LinkIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" /></svg>;
+const MusicOnIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
+const MusicOffIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
+
 const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
 const QuestionIcon = () => <span className="text-2xl">?</span>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
+const ExchangeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
 
 // --- Components ---
 
@@ -48,6 +53,82 @@ const FloatingIcons = memo(() => {
     );
 });
 
+// Background Music Component
+const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [userHasInteracted, setUserHasInteracted] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const BG_MUSIC_URL = "https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/bgm/Two%20Rooms%20and%20a%20Boom.mp3"; // Sci-Fi / Suspense Ambient
+
+    useEffect(() => {
+        // Attempt auto-play on mount
+        if (audioRef.current) {
+            audioRef.current.volume = 0.3; // Lower volume for background
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    setIsPlaying(true);
+                    setUserHasInteracted(true); // Auto-play success counts as interaction
+                }).catch(error => {
+                    console.log("Auto-play prevented. Waiting for user interaction.");
+                });
+            }
+        }
+
+        // Global click listener to start audio if not playing (Browser Policy)
+        // Only run this if we haven't successfully started audio yet.
+        const handleInteraction = () => {
+            if (audioRef.current && !userHasInteracted) {
+                audioRef.current.play().then(() => {
+                    setIsPlaying(true);
+                    setUserHasInteracted(true);
+                }).catch(() => {});
+            }
+        };
+
+        if (!userHasInteracted) {
+            window.addEventListener('click', handleInteraction);
+        }
+
+        return () => window.removeEventListener('click', handleInteraction);
+    }, [userHasInteracted]);
+
+    const toggleMusic = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent bubbling so the global listener doesn't immediately re-play it
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                audioRef.current.play();
+                setIsPlaying(true);
+                setUserHasInteracted(true);
+            }
+        }
+    };
+
+    // Style Calculation:
+    // Home: Bottom Left (as requested)
+    // Other pages: Bottom Right, slightly raised (to clear bottom action bars/nav), small, unobtrusive.
+    // Removed borders and background as requested.
+    const positionClass = isHome 
+        ? "bottom-8 left-8 scale-150" 
+        : "bottom-32 right-4 scale-100 opacity-60 hover:opacity-100";
+
+    return (
+        <>
+            <audio ref={audioRef} src={BG_MUSIC_URL} loop />
+            <button 
+                onClick={toggleMusic}
+                className={`fixed z-[200] transition-all duration-300 drop-shadow-lg active:scale-90 ${positionClass} ${isPlaying ? 'text-[#5abb2d]' : 'text-white/40'}`}
+                title={isPlaying ? "Mute Music" : "Play Music"}
+            >
+                {isPlaying ? <MusicOnIcon /> : <MusicOffIcon />}
+            </button>
+        </>
+    );
+};
+
 const Keypad = ({ onInput, onConfirm, onCancel, onDelete, value, label, loading }: any) => {
     return (
         <div className="bg-[#4d4696] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-sm relative z-10 backdrop-blur-sm animate-in zoom-in-95 duration-300">
@@ -79,7 +160,16 @@ const Keypad = ({ onInput, onConfirm, onCancel, onDelete, value, label, loading 
     );
 }
 
-const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet }: { role: Role | null, team: Team, verificationCode?: string, onVerify?: (code: string) => void, conditionMet?: boolean }) => {
+const TimerDisplay = ({ timeLeft }: { timeLeft: number }) => (
+    <div className="flex items-center gap-2 font-mono text-xl font-black text-white bg-black/20 px-3 py-1 rounded-lg">
+        <ClockIcon /> 
+        <span>
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+        </span>
+    </div>
+);
+
+const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isLeader }: { role: Role | null, team: Team, verificationCode?: string, onVerify?: (code: string) => void, conditionMet?: boolean, isLeader?: boolean }) => {
     const [inputCode, setInputCode] = useState('');
     const isRed = team === Team.RED;
     const isBlue = team === Team.BLUE;
@@ -100,13 +190,14 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet }: {
             {/* Top Section (3/4 height) */}
             <div className="flex flex-row h-[75%]">
                 {/* Left Column: Light - Description (2/3 width) */}
-                <div className="w-2/3 p-4 flex flex-col relative" style={{ backgroundColor: lightBg, color: darkBg }}>
+                {/* LEADER UI: Pale Yellow Border */}
+                <div className={`w-2/3 p-4 flex flex-col relative ${isLeader ? 'border-4 border-yellow-200' : ''}`} style={{ backgroundColor: lightBg, color: darkBg }}>
                      {/* Role Icon */}
                     <div className="text-4xl mb-2 opacity-90">
                          {isRed ? '🧨' : isBlue ? '🛡️' : '🎲'}
                     </div>
                     {/* Description */}
-                    <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10">
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
                         {role.winCondition && (
                             <div className="mt-2 text-xs opacity-90 border-t border-current pt-1">
@@ -148,6 +239,12 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet }: {
                             </div>
                         )}
                     </div>
+                    {/* Leader Label */}
+                    {isLeader && (
+                         <div className="absolute bottom-1 right-1 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-0.5 rounded shadow-sm z-20 font-traditional">
+                             領袖
+                         </div>
+                    )}
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
@@ -378,6 +475,7 @@ export default function App() {
 
       // Logic
       const deck = [...currentRoom.custom_roles];
+      // Logic: Ensure we have enough cards
       if (deck.length > playerCount) {
           alert("卡牌数量多于玩家数量");
           return;
@@ -402,20 +500,34 @@ export default function App() {
         if (role.relatedRoleId) {
             vCode = Math.floor(100000 + Math.random() * 900000).toString();
         }
+        
+        const roomNum = i < half ? 1 : 2;
 
         await supabase.from('players').update({ 
             role: role, 
             team: role.team, 
             condition_met: false,
-            room_number: i < half ? 1 : 2,
-            is_leader: false,
+            room_number: roomNum,
+            is_leader: false, // Reset leader, set later
             verification_code: vCode
         }).eq('id', shuffledPlayers[i].id);
       }
+      
+      // Assign Initial Leaders
+      // Try to find President for Room 1, Bomber for Room 2. If not, random.
+      const room1Players = shuffledPlayers.slice(0, half);
+      const room2Players = shuffledPlayers.slice(half);
+
+      const r1Leader = room1Players.find((_, idx) => shuffledDeck[idx].id === 'president') || room1Players[0];
+      const r2Leader = room2Players.find((_, idx) => shuffledDeck[half + idx].id === 'bomber') || room2Players[0];
+
+      if(r1Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r1Leader.id);
+      if(r2Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r2Leader.id);
 
       await supabase.from('rooms').update({
           status: GameStatus.DISTRIBUTING,
-          current_round: 0
+          current_round: 0,
+          pending_exchanges: {} // Reset pending exchanges
       }).eq('code', currentRoom.code);
 
       setTimeout(async () => {
@@ -442,25 +554,62 @@ export default function App() {
       await supabase.from('rooms').update({
         status: GameStatus.PLAYING,
         current_round: 1,
-        round_end_time: endTime.toISOString()
+        round_end_time: endTime.toISOString(),
+        pending_exchanges: {}
       }).eq('code', currentRoom.code);
   };
 
   const pauseRound = async () => {
-    await supabase.from('rooms').update({ status: GameStatus.PAUSED, round_end_time: null }).eq('code', currentRoom?.code);
+    // When pausing (round end), reset pending exchanges for the new selection phase
+    await supabase.from('rooms').update({ status: GameStatus.PAUSED, round_end_time: null, pending_exchanges: {} }).eq('code', currentRoom?.code);
   };
 
   const nextRound = async () => {
       if(!currentRoom) return;
       const nextR = currentRoom.current_round + 1;
-      if (nextR > 3) return;
+      if (nextR > 3) return; // Do not proceed past round 3
+      
       const length = currentRoom.settings.round_lengths[nextR - 1] || 60;
       const endTime = new Date(Date.now() + length * 1000);
       await supabase.from('rooms').update({
         status: GameStatus.PLAYING,
         current_round: nextR,
-        round_end_time: endTime.toISOString()
+        round_end_time: endTime.toISOString(),
+        pending_exchanges: {} // Clear selection when next round starts
       }).eq('code', currentRoom.code);
+  };
+
+  const movePlayer = async (player: Player, targetRoom: 1 | 2) => {
+      if (!currentRoom) return;
+
+      const sourceRoom = player.room_number;
+      let updates: any = { room_number: targetRoom };
+
+      // Leader Reassignment Logic
+      if (player.is_leader && sourceRoom) {
+          updates.is_leader = false;
+          // Find another player in source room to be leader
+          const candidates = players.filter(p => p.room_number === sourceRoom && p.id !== player.id && !p.is_god);
+          if (candidates.length > 0) {
+              const nextLeader = candidates[Math.floor(Math.random() * candidates.length)];
+              await supabase.from('players').update({ is_leader: true }).eq('id', nextLeader.id);
+          }
+      }
+
+      await supabase.from('players').update(updates).eq('id', player.id);
+  };
+
+  const handleLeaderExchangeSelect = async (targetId: string) => {
+      if (!currentPlayer || !currentPlayer.is_leader || !currentRoom) return;
+      if (!currentPlayer.room_number) return;
+
+      const currentExchanges = currentRoom.pending_exchanges || {};
+      const newExchanges = {
+          ...currentExchanges,
+          [currentPlayer.room_number === 1 ? 'room1_target_id' : 'room2_target_id']: targetId
+      };
+
+      await supabase.from('rooms').update({ pending_exchanges: newExchanges }).eq('code', currentRoom.code);
   };
 
   const closeGame = async () => {
@@ -611,10 +760,13 @@ export default function App() {
 
     // 7. GOD DASHBOARD
     if (currentPlayer?.is_god) {
-        // ... (Render logic for God View reused from previous step, ensuring full dashboard functionality)
         // Helper for Room Columns
         const renderRoomColumn = (roomNum: 1 | 2) => {
             const roomPlayers = players.filter(p => !p.is_god && p.room_number === roomNum);
+            
+            // Check for pending exchanges selected by Leader
+            const selectedForExchangeId = roomNum === 1 ? currentRoom?.pending_exchanges?.room1_target_id : currentRoom?.pending_exchanges?.room2_target_id;
+
             return (
                 <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-2xl border border-white/10 shadow-sm overflow-hidden">
                     <div className={`p-3 font-bold text-center text-sm uppercase tracking-wide border-b border-white/10 flex justify-between items-center ${roomNum === 1 ? 'bg-[#4c4595] text-white' : 'bg-[#de0029] text-white'}`}>
@@ -622,39 +774,48 @@ export default function App() {
                         <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
                     </div>
                     <div className="p-2 space-y-2 overflow-y-auto flex-1">
-                        {roomPlayers.map(p => (
-                            <div key={p.id} className="relative p-2 rounded-lg border border-white/10 bg-white/5 group hover:bg-white/10 transition">
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-white text-sm truncate flex items-center gap-1">
-                                        {p.name}
-                                        {p.role?.relatedRoleId && (
-                                            <span title={p.condition_met ? "已关联" : "未关联"}>
-                                                <LinkIcon />
-                                                <span className={`w-2 h-2 rounded-full inline-block ml-0.5 ${p.condition_met ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        {roomPlayers.map(p => {
+                            const isSelected = selectedForExchangeId === p.id;
+                            return (
+                                <div key={p.id} className={`relative p-2 rounded-lg border transition group ${isSelected ? 'bg-yellow-500/20 border-yellow-500' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="font-bold text-white text-sm truncate flex items-center gap-1">
+                                            {p.name}
+                                            {p.role?.relatedRoleId && (
+                                                <span title={p.condition_met ? "已关联" : "未关联"}>
+                                                    <LinkIcon />
+                                                    <span className={`w-2 h-2 rounded-full inline-block ml-0.5 ${p.condition_met ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                                </span>
+                                            )}
+                                            {isSelected && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded font-black">选定</span>}
+                                        </span>
+                                        {p.role && (
+                                            <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-[#de0029] text-white' : p.team === Team.BLUE ? 'bg-[#82a0d2] text-[#4c4595]' : 'bg-[#9b9794] text-[#656362]'}`}>
+                                                {p.role.name}
                                             </span>
                                         )}
-                                    </span>
-                                    {p.role && (
-                                        <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-[#de0029] text-white' : p.team === Team.BLUE ? 'bg-[#82a0d2] text-[#4c4595]' : 'bg-[#9b9794] text-[#656362]'}`}>
-                                            {p.role.name}
-                                        </span>
-                                    )}
+                                    </div>
+                                    <div className="flex items-center justify-between mt-2">
+                                        <button 
+                                            onClick={() => supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id)}
+                                            className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'}`}
+                                            title="Toggle Leader"
+                                        >
+                                            <CrownIcon />
+                                        </button>
+                                        {roomNum === 1 ? (
+                                            <button onClick={() => movePlayer(p, 2)} className={`text-[10px] px-2 py-1 rounded font-bold transition ${isSelected ? 'bg-yellow-500 text-black animate-pulse' : 'bg-white/10 hover:bg-white/20 text-white/70'}`}>
+                                                {isSelected ? '确认移至 2 →' : '移至 2 →'}
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => movePlayer(p, 1)} className={`text-[10px] px-2 py-1 rounded font-bold transition ${isSelected ? 'bg-yellow-500 text-black animate-pulse' : 'bg-white/10 hover:bg-white/20 text-white/70'}`}>
+                                                {isSelected ? '← 确认移至 1' : '← 移至 1'}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between mt-2">
-                                    <button 
-                                        onClick={() => supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id)}
-                                        className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'}`}
-                                    >
-                                        <CrownIcon />
-                                    </button>
-                                    {roomNum === 1 ? (
-                                        <button onClick={() => supabase.from('players').update({ room_number: 2 }).eq('id', p.id)} className="bg-white/10 hover:bg-white/20 text-white/70 text-[10px] px-2 py-1 rounded">移至 2 →</button>
-                                    ) : (
-                                        <button onClick={() => supabase.from('players').update({ room_number: 1 }).eq('id', p.id)} className="bg-white/10 hover:bg-white/20 text-white/70 text-[10px] px-2 py-1 rounded">← 移至 1</button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -672,7 +833,8 @@ export default function App() {
                         <button onClick={() => supabase.from('rooms').update({ winner: Team.BLUE, status: GameStatus.FINISHED }).eq('code', currentRoom?.code)} className="bg-[#82a0d2] text-[#4c4595] px-3 py-1 rounded text-xs font-bold border border-white/20">蓝胜</button>
                         <button onClick={closeGame} className="bg-red-900/50 text-red-300 px-3 py-1 rounded text-xs font-bold">关闭</button>
                     </div>
-                    <div className="font-mono font-bold w-12 text-right">{timeLeft > 0 ? timeLeft : '--'}</div>
+                    {/* Consistent Timer Style */}
+                    <TimerDisplay timeLeft={timeLeft} />
                 </header>
 
                 {currentRoom?.status === GameStatus.LOBBY ? (
@@ -689,6 +851,7 @@ export default function App() {
                                     winCondition: customRoleWin
                                 }} 
                                 team={customRoleTeam} 
+                                isLeader={true}
                             />
                         </div>
                         
@@ -777,6 +940,11 @@ export default function App() {
                 ) : (
                     // GAME VIEW (God Dashboard)
                     <div className="flex-grow flex flex-col p-2 gap-2 min-h-0">
+                        {currentRoom?.status === GameStatus.PAUSED && (
+                             <div className="bg-orange-500/20 text-orange-200 text-xs text-center py-1 rounded border border-orange-500/50 animate-pulse">
+                                 回合结束。等待领袖选定交换人选，然后手动执行移动。
+                             </div>
+                        )}
                         <div className="flex-grow flex gap-2 min-h-0">
                             {renderRoomColumn(1)}
                             {renderRoomColumn(2)}
@@ -811,15 +979,50 @@ export default function App() {
                         <button onClick={pauseRound} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">暂停 / 结束回合</button>
                     )}
                     {currentRoom?.status === GameStatus.PAUSED && (
-                        <button onClick={nextRound} className="w-full bg-[#82a0d2] text-[#4c4595] py-3 rounded-xl font-bold">下一回合</button>
+                        currentRoom.current_round < 3 ? (
+                            <button onClick={nextRound} className="w-full bg-[#82a0d2] text-[#4c4595] py-3 rounded-xl font-bold">
+                                进入第 {currentRoom.current_round + 1} 回合
+                            </button>
+                        ) : (
+                            <div className="w-full bg-black/40 text-white text-center py-3 rounded-xl font-bold border border-white/20">
+                                游戏结束 - 等待宣判结果
+                            </div>
+                        )
                     )}
                 </div>
             </div>
         );
     }
 
-    // 8. PLAYER GAME (Card Flip)
+    // 8. PLAYER GAME (Card Flip & Leader UI)
     if (currentPlayer?.role) {
+        // Exchange Selection Mode for Leader
+        if (currentRoom?.status === GameStatus.PAUSED && currentPlayer.is_leader) {
+             const myRoomPlayers = players.filter(p => p.room_number === currentPlayer.room_number && p.id !== currentPlayer.id && !p.is_god);
+             const myPendingTarget = currentPlayer.room_number === 1 ? currentRoom.pending_exchanges?.room1_target_id : currentRoom.pending_exchanges?.room2_target_id;
+             
+             return (
+                <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
+                    <h2 className="text-2xl font-black text-white text-center mb-6 font-traditional">选择一名人质交换</h2>
+                    <div className="flex-grow space-y-3 overflow-y-auto">
+                        {myRoomPlayers.map(p => (
+                            <button 
+                                key={p.id}
+                                onClick={() => handleLeaderExchangeSelect(p.id)}
+                                className={`w-full p-4 rounded-xl flex justify-between items-center transition ${myPendingTarget === p.id ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                            >
+                                <span className="font-bold">{p.name}</span>
+                                {myPendingTarget === p.id && <CheckCircleIcon />}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-6 text-center text-white/50 text-sm">
+                        上帝将看到你的选择并执行交换
+                    </div>
+                </div>
+             );
+        }
+
         return (
             <div className="min-h-screen flex flex-col bg-[#4d4696] relative overflow-hidden z-10">
                 {/* Top Info */}
@@ -832,11 +1035,8 @@ export default function App() {
                             <div className="font-bold text-white leading-none">{currentPlayer.name}</div>
                             <div className="text-xs text-white/60">房间 {currentPlayer.room_number || '?'}</div>
                         </div>
-                        {currentPlayer.is_leader && <span className="bg-yellow-400 text-black text-[10px] px-1 rounded font-bold">领袖</span>}
                     </div>
-                    <div className="flex items-center gap-2 font-mono text-xl font-black text-white">
-                        <ClockIcon /> {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                    </div>
+                    <TimerDisplay timeLeft={timeLeft} />
                 </div>
 
                 <div className="flex-grow flex items-center justify-center p-6 perspective-1000">
@@ -847,7 +1047,10 @@ export default function App() {
                     >
                         {/* FRONT (Hidden initially, Back of card visually) */}
                         <div className="absolute inset-0 backface-hidden rounded-2xl border-4 border-white/20 bg-gradient-to-br from-[#4c4595] to-[#2d285e] flex items-center justify-center shadow-2xl">
-                            <div className="text-6xl opacity-50">💣</div>
+                             {/* UPDATED: Circle Question Mark */}
+                            <div className="w-24 h-24 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10">
+                                <span className="text-6xl font-black text-white/50">?</span>
+                            </div>
                             <div className="absolute bottom-4 text-white/50 text-sm font-bold tracking-widest uppercase">点击查看</div>
                         </div>
 
@@ -859,6 +1062,7 @@ export default function App() {
                                 verificationCode={currentPlayer.verification_code}
                                 onVerify={handleVerifyRole}
                                 conditionMet={currentPlayer.condition_met}
+                                isLeader={currentPlayer.is_leader}
                             />
                             <button onClick={() => setIsFlipped(false)} className="absolute top-2 right-2 text-black/20 hover:text-black text-xl font-bold p-2 z-20">×</button>
                         </div>
@@ -881,6 +1085,7 @@ export default function App() {
     <div className="min-h-screen relative overflow-hidden">
         {/* Persistent Background Layer */}
         <FloatingIcons />
+        <BackgroundMusic isHome={view === 'HOME'} />
         
         {/* Main Application Logic */}
         {renderContent()}

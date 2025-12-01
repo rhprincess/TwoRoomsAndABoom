@@ -20,7 +20,8 @@ create table rooms (
   round_end_time timestamptz,
   winner text,
   settings jsonb default '{"rounds": 3, "round_lengths": [300, 180, 60], "min_players": 6, "debug_mode": false}',
-  custom_roles jsonb
+  custom_roles jsonb,
+  pending_exchanges jsonb default '{}'
 );
 
 -- 2. Create Players Table

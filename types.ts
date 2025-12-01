@@ -62,4 +62,8 @@ export interface Room {
     debug_mode: boolean;
   };
   custom_roles: Role[]; // The active "Special Roles" deck list
+  pending_exchanges?: {
+    room1_target_id?: string;
+    room2_target_id?: string;
+  };
 }
