@@ -7,8 +7,8 @@ export const COLORS = {
   SUCCESS_TEXT: '#185021',
   
   // Blue Team
-  BLUE_LIGHT: '#82a0d2',
-  BLUE_DARK: '#2562c6',
+  BLUE_LIGHT: '#699ed4',
+  BLUE_DARK: '#3b54a4',
   
   // Red Team
   RED_LIGHT: '#ff8fa3',
