@@ -39,7 +39,7 @@ export const BASE_ROLES: Role[] = [
     winCondition: '跟著總統'
   },
   {
-    id: 'blue_team',
+    id: 'team_blue_member',
     name: '藍隊隊員',
     description: '保护总统。让炸弹人远离总统。如果总统存活，你获胜。',
     team: Team.BLUE,
@@ -47,7 +47,7 @@ export const BASE_ROLES: Role[] = [
     winCondition: '想盡辦法讓總統遠離炸彈客'
   },
   {
-    id: 'red_team',
+    id: 'team_red_member',
     name: '紅隊隊員',
     description: '帮助炸弹人找到总统。如果炸弹人炸死总统，你获胜。',
     team: Team.RED,
