@@ -266,15 +266,18 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 {/* Right Column: Dark - Name (1/3 width) */}
                 <div className="w-1/3 relative border-l-2 border-black/10 flex items-center justify-center overflow-hidden" style={{ backgroundColor: darkBg, color: 'white' }}>
                     <div className="transform rotate-90 flex items-center gap-3 origin-center whitespace-nowrap pt-8">
-                        <span className="text-3xl font-black font-traditional tracking-widest">
-                            {role.name}
-                        </span>
-                         {/* Win Condition - Below Name (Right physically after rotate) */}
-                         {role.winCondition && (
+                        {/* Win Condition - Below Name (Right physically after rotate) */}
+                        {role.winCondition && (
                             <span className="text-xs font-bold uppercase tracking-wider opacity-90" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
+                    </div>
+                    <div className="transform rotate-90 flex items-center gap-3 origin-center whitespace-nowrap pt-8">
+                        <span className="text-3xl font-black font-traditional tracking-widest">
+                            {role.name}
+                        </span>
+                         
                     </div>
                 </div>
             </div>
