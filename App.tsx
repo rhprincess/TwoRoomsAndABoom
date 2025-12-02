@@ -264,8 +264,8 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
-                <div className="w-1/3 relative border-l-2 border-black/10 flex justify-center pt-12 overflow-hidden" style={{ backgroundColor: darkBg, color: 'white' }}>
-                    <div className="absolute top-16 transform rotate-90 origin-center flex flex-col items-center gap-1 whitespace-nowrap">
+                <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-8" style={{ backgroundColor: darkBg, color: 'white' }}>
+                    <div className="absolute top-16 transform rotate-90 origin-center flex flex-col items-start gap-1 whitespace-nowrap">
                         {/* Name (Rotates to Right) */}
                         <span className="text-3xl font-black font-traditional tracking-widest">
                             {role.name}
@@ -1069,9 +1069,17 @@ export default function App() {
 
         const canDeclareWin = swapExecuted || currentRoom?.status !== GameStatus.PAUSED;
 
+        const getTeamStyle = (team: Team) => {
+            switch(team) {
+                case Team.BLUE: return 'bg-[#82a0d2]/20 border-[#82a0d2] text-[#82a0d2]';
+                case Team.RED: return 'bg-[#de0029]/20 border-[#de0029] text-[#ff8fa3]';
+                default: return 'bg-white/10 border-white/20 text-white/70';
+            }
+        };
+
         return (
             <div className="h-screen bg-[#2d285e] text-white flex flex-col font-sans overflow-hidden z-20 relative">
-                <header className="bg-[#4d4696] px-4 py-2 shadow-lg flex flex-wrap justify-between items-center border-b border-white/10 shrink-0 z-20 gap-y-2">
+                <header className="bg-[#4d4696]/90 backdrop-blur-md px-4 py-2 shadow-lg flex flex-wrap justify-between items-center border-b border-white/10 shrink-0 z-20 gap-y-2">
                     <div className="flex items-center gap-3">
                         <span className="font-mono font-bold text-xl">{currentRoom?.code}</span>
                         <span className="bg-[#5abb2d] text-xs px-2 py-1 rounded font-bold">GOD</span>
@@ -1110,6 +1118,91 @@ export default function App() {
                             <div className="flex gap-2 pt-2">
                                 <input value={saveSetName} onChange={e => setSaveSetName(e.target.value)} placeholder="新卡组名称" className="flex-1 bg-black/20 p-2 rounded text-xs outline-none border border-white/10" />
                                 <button onClick={saveCardSet} className="bg-[#4c4595] px-3 rounded text-xs font-bold">保存</button>
+                            </div>
+                        </div>
+
+                        {/* Game Configuration */}
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                <span className="text-sm font-bold">游戏设置</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label className="block text-white/50 mb-1">回合数</label>
+                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
+                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
+                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Current Deck */}
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                            <h3 className="text-sm font-bold opacity-50 mb-3">当前卡组 ({currentRoom.custom_roles.length})</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {currentRoom.custom_roles.map((r, i) => (
+                                    <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : 'bg-white/10 border-white/20'}`}>
+                                        <span className="opacity-50 text-[9px] mr-1">[{r.id}]</span>
+                                        {r.name}
+                                        {/* Allow delete if NOT Key Role OR Test Mode is Active */}
+                                        {(!r.isKeyRole || testMode) && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Standard Roles Accordion */}
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold opacity-50 mb-2">备选卡牌</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                {BASE_ROLES.filter(r => ((!r.isKeyRole || testMode) && !['blue_team', 'red_team'].includes(r.id))).map(r => (
+                                    <div key={r.id} className={`rounded border overflow-hidden transition ${getTeamStyle(r.team)}`}>
+                                        <button 
+                                            onClick={() => setExpandedRole(expandedRole === r.id ? null : r.id)}
+                                            className="w-full p-2 text-left text-xs font-bold flex justify-between items-center hover:bg-white/5"
+                                        >
+                                            <span>{r.name}</span>
+                                            <span>{expandedRole === r.id ? '▲' : '▼'}</span>
+                                        </button>
+                                        {expandedRole === r.id && (
+                                            <div className="p-2 bg-black/20 text-xs text-white/70 border-t border-white/10">
+                                                <p className="mb-2">{r.description}</p>
+                                                <button 
+                                                    onClick={() => updateRoles([...currentRoom.custom_roles, r])} 
+                                                    className="w-full bg-white/10 hover:bg-white/20 py-1 rounded text-white"
+                                                >
+                                                    + 添加
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                         {/* Live Card Preview */}
+                         <div className="w-full flex justify-center py-4">
+                            <div className="w-[200px] aspect-[3/4] font-traditional transform scale-90">
+                                <CardDisplay 
+                                    role={{
+                                        id: customRoleId || 'preview',
+                                        name: customRoleName || '預覽',
+                                        description: customRoleDesc || '描述文本...',
+                                        team: customRoleTeam,
+                                        isKeyRole: false,
+                                        winCondition: customRoleWin || 'WIN CONDITION',
+                                        relatedRoleId: customRoleRelation,
+                                        bgImage: customRoleImg
+                                    }} 
+                                    team={customRoleTeam} 
+                                    isLeader={true}
+                                />
                             </div>
                         </div>
 
@@ -1153,89 +1246,6 @@ export default function App() {
                             >添加至卡组</button>
                         </div>
 
-                        {/* 3. Game Configuration */}
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
-                                <span className="text-sm font-bold">游戏设置</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                    <label className="block text-white/50 mb-1">回合数</label>
-                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
-                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
-                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 4. Current Deck */}
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                            <h3 className="text-sm font-bold opacity-50 mb-3">当前卡组 ({currentRoom.custom_roles.length})</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {currentRoom.custom_roles.map((r, i) => (
-                                    <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : 'bg-white/10 border-white/20'}`}>
-                                        <span className="opacity-50 text-[9px] mr-1">[{r.id}]</span>
-                                        {r.name}
-                                        {/* Allow delete if NOT Key Role OR Test Mode is Active */}
-                                        {(!r.isKeyRole || testMode) && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        {/* 5. Standard Roles Accordion */}
-                        <div className="space-y-1">
-                            <h3 className="text-sm font-bold opacity-50 mb-2">备选卡牌</h3>
-                            {BASE_ROLES.filter(r => ((!r.isKeyRole || testMode) && !['blue_team', 'red_team'].includes(r.id))).map(r => (
-                                <div key={r.id} className="bg-white/5 rounded border border-white/10 overflow-hidden">
-                                    <button 
-                                        onClick={() => setExpandedRole(expandedRole === r.id ? null : r.id)}
-                                        className="w-full p-2 text-left text-xs font-bold flex justify-between items-center hover:bg-white/5"
-                                    >
-                                        <span>{r.name} ({r.team === Team.BLUE ? '蓝' : r.team === Team.RED ? '红' : '灰'})</span>
-                                        <span>{expandedRole === r.id ? '▲' : '▼'}</span>
-                                    </button>
-                                    {expandedRole === r.id && (
-                                        <div className="p-2 bg-black/20 text-xs text-white/70 border-t border-white/10">
-                                            <p className="mb-2">{r.description}</p>
-                                            <button 
-                                                onClick={() => updateRoles([...currentRoom.custom_roles, r])} 
-                                                className="w-full bg-white/10 hover:bg-white/20 py-1 rounded text-white"
-                                            >
-                                                + 添加
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                         {/* Live Card Preview */}
-                         <div className="w-full flex justify-center py-4">
-                            <div className="w-[200px] aspect-[3/4] font-traditional transform scale-90">
-                                <CardDisplay 
-                                    role={{
-                                        id: customRoleId || 'preview',
-                                        name: customRoleName || '預覽',
-                                        description: customRoleDesc || '描述文本...',
-                                        team: customRoleTeam,
-                                        isKeyRole: false,
-                                        winCondition: customRoleWin || 'WIN CONDITION',
-                                        relatedRoleId: customRoleRelation,
-                                        bgImage: customRoleImg
-                                    }} 
-                                    team={customRoleTeam} 
-                                    isLeader={true}
-                                />
-                            </div>
-                        </div>
-
                     </div>
                 ) : (
                     // GAME VIEW (God Dashboard)
@@ -1255,7 +1265,7 @@ export default function App() {
                 )}
 
                 {/* Bottom Controls */}
-                <div className="p-4 bg-[#2d285e] border-t border-white/10 sticky bottom-0 z-30">
+                <div className="p-4 bg-[#2d285e]/90 backdrop-blur-md border-t border-white/10 sticky bottom-0 z-30">
                     {currentRoom?.status === GameStatus.LOBBY && (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between bg-black/20 p-2 rounded-lg">
