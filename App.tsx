@@ -216,10 +216,6 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         />
                     )}
 
-                     {/* Role Icon */}
-                    <div className="text-4xl mb-2 opacity-90 relative z-10">
-                         {isRed ? '🧨' : isBlue ? '🛡️' : '🎲'}
-                    </div>
                     {/* Description */}
                     <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative">
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
@@ -270,15 +266,15 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 {/* Right Column: Dark - Name (1/3 width) */}
                 <div className="w-1/3 relative border-l-2 border-black/10 flex items-center justify-center overflow-hidden" style={{ backgroundColor: darkBg, color: 'white' }}>
                     <div className="transform rotate-90 flex items-center gap-3 origin-center whitespace-nowrap pt-8">
-                         {/* Win Condition - Left of Name (Top physically after rotate) */}
+                        <span className="text-3xl font-black font-traditional tracking-widest">
+                            {role.name}
+                        </span>
+                         {/* Win Condition - Below Name (Right physically after rotate) */}
                          {role.winCondition && (
                             <span className="text-xs font-bold uppercase tracking-wider opacity-90" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
-                        <span className="text-3xl font-black font-traditional tracking-widest">
-                            {role.name}
-                        </span>
                     </div>
                 </div>
             </div>
@@ -1137,46 +1133,6 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Role Builder */}
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
-                            <div className="flex gap-2">
-                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
-                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
-                                    <option value={Team.BLUE}>蓝队</option>
-                                    <option value={Team.RED}>红队</option>
-                                    <option value={Team.GREY}>灰队</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            </div>
-                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (可选)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            
-                            <button 
-                                onClick={() => {
-                                    if(!customRoleName) return;
-                                    const newRole = { 
-                                        id: customRoleId || `custom_${Date.now()}`, 
-                                        name: customRoleName, 
-                                        description: customRoleDesc, 
-                                        team: customRoleTeam, 
-                                        isKeyRole: false, 
-                                        isCustom: true, 
-                                        winCondition: customRoleWin,
-                                        relatedRoleId: customRoleRelation || undefined,
-                                        bgImage: customRoleImg || undefined
-                                    };
-                                    updateRoles([...currentRoom.custom_roles, newRole]);
-                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
-                                }}
-                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
-                            >添加至卡组</button>
-                        </div>
-
                         {/* Current Deck */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                             <h3 className="text-sm font-bold opacity-50 mb-3">当前卡组 ({currentRoom.custom_roles.length})</h3>
@@ -1238,6 +1194,47 @@ export default function App() {
                                 />
                             </div>
                         </div>
+
+                        {/* Role Builder */}
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
+                            <div className="flex gap-2">
+                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
+                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
+                                    <option value={Team.BLUE}>蓝队</option>
+                                    <option value={Team.RED}>红队</option>
+                                    <option value={Team.GREY}>灰队</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            </div>
+                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (可选)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            
+                            <button 
+                                onClick={() => {
+                                    if(!customRoleName) return;
+                                    const newRole = { 
+                                        id: customRoleId || `custom_${Date.now()}`, 
+                                        name: customRoleName, 
+                                        description: customRoleDesc, 
+                                        team: customRoleTeam, 
+                                        isKeyRole: false, 
+                                        isCustom: true, 
+                                        winCondition: customRoleWin,
+                                        relatedRoleId: customRoleRelation || undefined,
+                                        bgImage: customRoleImg || undefined
+                                    };
+                                    updateRoles([...currentRoom.custom_roles, newRole]);
+                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
+                                }}
+                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
+                            >添加至卡组</button>
+                        </div>
+
                     </div>
                 ) : (
                     // GAME VIEW (God Dashboard)
