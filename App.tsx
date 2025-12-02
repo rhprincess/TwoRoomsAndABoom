@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role, CardSet } from './types';
 import { BASE_ROLES, DEFAULT_ROUND_LENGTHS, COLORS } from './constants';
@@ -360,6 +360,46 @@ export default function App() {
       }
   }, [currentPlayer?.room_number, currentRoom?.status]);
 
+  // --- God Mode: Leader Watcher (Auto-Reassign when both exchanges done) ---
+  useEffect(() => {
+      const checkAndAssignLeaders = async () => {
+          if (!currentRoom || !currentPlayer?.is_god || currentRoom.status !== GameStatus.PAUSED) return;
+
+          const r1Done = currentRoom.exchange_status?.room1_done;
+          const r2Done = currentRoom.exchange_status?.room2_done;
+
+          if (r1Done && r2Done) {
+              // Both rooms have finished exchanging. Ensure they have leaders.
+              // We fetch fresh data to be absolutely sure we don't act on stale state
+              const { data: dbPlayers } = await supabase.from('players').eq('room_code', currentRoom.code);
+              if (!dbPlayers) return;
+
+              const r1 = dbPlayers.filter(p => p.room_number === 1 && !p.is_god);
+              const r2 = dbPlayers.filter(p => p.room_number === 2 && !p.is_god);
+
+              const r1Has = r1.some(p => p.is_leader);
+              const r2Has = r2.some(p => p.is_leader);
+
+              if (!r1Has && r1.length > 0) {
+                  const p = r1[Math.floor(Math.random() * r1.length)];
+                  await supabase.from('players').update({ is_leader: true }).eq('id', p.id);
+                  console.log("God: Auto-assigned leader for Room 1:", p.name);
+              }
+
+              if (!r2Has && r2.length > 0) {
+                  const p = r2[Math.floor(Math.random() * r2.length)];
+                  await supabase.from('players').update({ is_leader: true }).eq('id', p.id);
+                  console.log("God: Auto-assigned leader for Room 2:", p.name);
+              }
+          }
+      };
+
+      if (currentPlayer?.is_god) {
+          const timeout = setTimeout(checkAndAssignLeaders, 1000); // Small debounce to allow DB propogation
+          return () => clearTimeout(timeout);
+      }
+  }, [currentRoom, currentPlayer, players]); // Re-run when currentRoom or players update
+
   const fetchCardSets = async () => {
       const { data } = await supabase.from('card_sets').select('*').order('created_at');
       if (data) setCardSets(data);
@@ -667,41 +707,20 @@ export default function App() {
       const targetRoom = myRoom === 1 ? 2 : 1;
 
       // 1. Move player and strip leadership (Do NOT re-elect yet)
+      // The God client watcher will handle re-election when both rooms are done.
       await supabase.from('players').update({ room_number: targetRoom, is_leader: false }).eq('id', targetId);
 
       // 2. Mark exchange as done for this room
-      const currentStatus = currentRoom.exchange_status || { room1_done: false, room2_done: false };
-      const newStatus = {
-          ...currentStatus,
+      // Fetch latest room to ensure we don't overwrite other room's status
+      const { data: latestRoom } = await supabase.from('rooms').select('*').eq('code', currentRoom.code).single();
+      if (!latestRoom) return;
+
+      const nextStatus = {
+          ...latestRoom.exchange_status,
           [myRoom === 1 ? 'room1_done' : 'room2_done']: true
       };
       
-      await supabase.from('rooms').update({ exchange_status: newStatus }).eq('code', currentRoom.code);
-
-      // 3. Check if BOTH are done now. If so, trigger re-election for empty rooms.
-      const isRoom1Done = myRoom === 1 ? true : currentStatus.room1_done;
-      const isRoom2Done = myRoom === 2 ? true : currentStatus.room2_done;
-
-      if (isRoom1Done && isRoom2Done) {
-           // We need fresh data to ensure we don't double elect or miss someone
-           const { data: allPlayers } = await supabase.from('players').eq('room_code', currentRoom.code);
-           if (!allPlayers) return;
-
-           const r1 = allPlayers.filter(p => p.room_number === 1 && !p.is_god);
-           const r2 = allPlayers.filter(p => p.room_number === 2 && !p.is_god);
-           
-           const r1HasLeader = r1.some(p => p.is_leader);
-           const r2HasLeader = r2.some(p => p.is_leader);
-
-           if (!r1HasLeader && r1.length > 0) {
-               const newL = r1[Math.floor(Math.random() * r1.length)];
-               await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
-           }
-           if (!r2HasLeader && r2.length > 0) {
-               const newL = r2[Math.floor(Math.random() * r2.length)];
-               await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
-           }
-      }
+      await supabase.from('rooms').update({ exchange_status: nextStatus }).eq('code', currentRoom.code);
   };
 
   const handleGameEnd = async (winner: Team) => {
