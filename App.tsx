@@ -264,7 +264,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
-                <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-8" style={{ backgroundColor: darkBg, color: 'white' }}>
+                <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-start pt-8" style={{ backgroundColor: darkBg, color: 'white' }}>
                     <div className="absolute top-16 transform rotate-90 origin-center flex flex-col items-start gap-1 whitespace-nowrap">
                         {/* Name (Rotates to Right) */}
                         <span className="text-3xl font-black font-traditional tracking-widest">
