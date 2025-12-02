@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role, CardSet } from './types';
@@ -975,8 +974,13 @@ export default function App() {
                                     </div>
                                     <div className="flex items-center justify-between mt-2">
                                         <button 
-                                            onClick={() => supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id)}
-                                            className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(isPaused && swapExecuted) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''}`}
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                const { error } = await supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id);
+                                                if(error) console.error("Update failed", error);
+                                                if(currentRoom) fetchPlayers(currentRoom.code);
+                                            }}
+                                            className={`relative z-10 p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(isPaused && swapExecuted) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''}`}
                                             title="Toggle Leader"
                                         >
                                             <CrownIcon />
