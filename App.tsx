@@ -264,15 +264,16 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
-                <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-8" style={{ backgroundColor: darkBg, color: 'white' }}>
-                    <div className="absolute top-16 transform rotate-90 origin-center flex flex-col items-start gap-1 whitespace-nowrap">
-                        {/* Name (Rotates to Right) */}
-                        <span className="text-3xl font-black font-traditional tracking-widest">
+                {/* UPDATED: Top Aligned, 8px margin using writing-mode */}
+                <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-2" style={{ backgroundColor: darkBg, color: 'white' }}>
+                    <div className="flex gap-1" style={{ writingMode: 'vertical-rl', textOrientation: 'sideways' }}>
+                        {/* Name (First -> Right) */}
+                        <span className="text-3xl font-black font-traditional tracking-widest text-left leading-none">
                             {role.name}
                         </span>
-                         {/* Win Condition (Rotates to Left) */}
+                         {/* Win Condition (Second -> Left) */}
                          {role.winCondition && (
-                            <span className="text-xs font-bold uppercase tracking-wider opacity-90" style={{ color: lightBg }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left leading-none" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
