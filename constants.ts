@@ -115,7 +115,7 @@ export const BASE_ROLES: Role[] = [
     winCondition: '你只能分享卡牌'
   },
     {
-    id: 'negotiator_red',
+    id: 'negotiator_blue',
     name: '談判專家',
     description: '蓝队。你需要分享你的卡牌，尽可能为队伍获取到更多信息。',
     team: Team.BLUE,
