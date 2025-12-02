@@ -18,7 +18,6 @@ const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
 const QuestionIcon = () => <span className="text-2xl">?</span>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
-const ExchangeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
 
 // --- Components ---
 
@@ -52,6 +51,16 @@ const FloatingIcons = memo(() => {
         </div>
     );
 });
+
+// Exchange Alert Overlay
+const ExchangeAlert = () => (
+    <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center animate-in fade-in duration-300">
+        <div className="text-6xl mb-8 animate-bounce">🏃</div>
+        <h2 className="text-3xl font-black text-white text-center px-4 leading-relaxed font-traditional">
+            请前往交换的房间
+        </h2>
+    </div>
+);
 
 // Background Music Component
 const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
@@ -107,10 +116,6 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
         }
     };
 
-    // Style Calculation:
-    // Home: Bottom Left (as requested)
-    // Other pages: Bottom Right, slightly raised (to clear bottom action bars/nav), small, unobtrusive.
-    // Removed borders and background as requested.
     const positionClass = isHome 
         ? "bottom-8 left-8 scale-150" 
         : "bottom-32 right-4 scale-100 opacity-60 hover:opacity-100";
@@ -295,6 +300,9 @@ export default function App() {
 
   // Animation States
   const [shuffling, setShuffling] = useState(false);
+  const [showExchangeAlert, setShowExchangeAlert] = useState(false);
+  
+  const prevRoomRef = useRef<number | null>(null);
 
   // --- Realtime ---
   useEffect(() => {
@@ -334,6 +342,23 @@ export default function App() {
         if (me) setCurrentPlayer(me);
     }
   };
+
+  // --- Room Change Alert Logic ---
+  useEffect(() => {
+      // Init ref
+      if (currentPlayer?.room_number && prevRoomRef.current === null) {
+          prevRoomRef.current = currentPlayer.room_number;
+      }
+      
+      // Check change
+      if (currentPlayer?.room_number && prevRoomRef.current !== null && currentPlayer.room_number !== prevRoomRef.current) {
+          if (currentRoom?.status === GameStatus.PAUSED) {
+              setShowExchangeAlert(true);
+              setTimeout(() => setShowExchangeAlert(false), 3000);
+          }
+          prevRoomRef.current = currentPlayer.room_number;
+      }
+  }, [currentPlayer?.room_number, currentRoom?.status]);
 
   const fetchCardSets = async () => {
       const { data } = await supabase.from('card_sets').select('*').order('created_at');
@@ -641,19 +666,10 @@ export default function App() {
 
       const targetRoom = myRoom === 1 ? 2 : 1;
 
-      // 1. Move player and strip leadership
+      // 1. Move player and strip leadership (Do NOT re-elect yet)
       await supabase.from('players').update({ room_number: targetRoom, is_leader: false }).eq('id', targetId);
 
-      // 2. Re-elect leader for this room if the leader chose themselves to move
-      if (playerToMove.is_leader) {
-          const candidates = players.filter(p => p.room_number === myRoom && p.id !== playerToMove.id && !p.is_god);
-          if (candidates.length > 0) {
-              const newLeader = candidates[Math.floor(Math.random() * candidates.length)];
-              await supabase.from('players').update({ is_leader: true }).eq('id', newLeader.id);
-          }
-      }
-
-      // 3. Mark exchange as done for this room
+      // 2. Mark exchange as done for this room
       const currentStatus = currentRoom.exchange_status || { room1_done: false, room2_done: false };
       const newStatus = {
           ...currentStatus,
@@ -661,6 +677,31 @@ export default function App() {
       };
       
       await supabase.from('rooms').update({ exchange_status: newStatus }).eq('code', currentRoom.code);
+
+      // 3. Check if BOTH are done now. If so, trigger re-election for empty rooms.
+      const isRoom1Done = myRoom === 1 ? true : currentStatus.room1_done;
+      const isRoom2Done = myRoom === 2 ? true : currentStatus.room2_done;
+
+      if (isRoom1Done && isRoom2Done) {
+           // We need fresh data to ensure we don't double elect or miss someone
+           const { data: allPlayers } = await supabase.from('players').eq('room_code', currentRoom.code);
+           if (!allPlayers) return;
+
+           const r1 = allPlayers.filter(p => p.room_number === 1 && !p.is_god);
+           const r2 = allPlayers.filter(p => p.room_number === 2 && !p.is_god);
+           
+           const r1HasLeader = r1.some(p => p.is_leader);
+           const r2HasLeader = r2.some(p => p.is_leader);
+
+           if (!r1HasLeader && r1.length > 0) {
+               const newL = r1[Math.floor(Math.random() * r1.length)];
+               await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
+           }
+           if (!r2HasLeader && r2.length > 0) {
+               const newL = r2[Math.floor(Math.random() * r2.length)];
+               await supabase.from('players').update({ is_leader: true }).eq('id', newL.id);
+           }
+      }
   };
 
   const handleGameEnd = async (winner: Team) => {
@@ -1152,7 +1193,7 @@ export default function App() {
                     <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
                         <CheckCircleIcon />
                         <h2 className="text-2xl font-black text-white mt-4">交换已完成</h2>
-                        <p className="text-white/50 mt-2">请将手机交给新的领袖，或前往新房间。</p>
+                        <p className="text-white/50 mt-2">等待另一房间确认...</p>
                     </div>
                  );
              }
@@ -1251,6 +1292,9 @@ export default function App() {
         <FloatingIcons />
         <BackgroundMusic isHome={view === 'HOME'} />
         
+        {/* Alerts Overlay */}
+        {showExchangeAlert && <ExchangeAlert />}
+
         {/* Main Application Logic */}
         {renderContent()}
     </div>
