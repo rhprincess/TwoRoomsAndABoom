@@ -61,6 +61,17 @@ const ExchangeAlert = () => (
     </div>
 );
 
+// Leader Appointment Overlay
+const LeaderAppointmentOverlay = () => (
+    <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center animate-in fade-in duration-300 backdrop-blur-sm">
+        <div className="text-6xl mb-8 animate-pulse text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">👑</div>
+        <h2 className="text-3xl font-black text-white text-center px-4 leading-relaxed font-traditional mb-4">
+            你已被任命为领袖
+        </h2>
+        <p className="text-white/70 text-lg font-bold">等待下一回合开启</p>
+    </div>
+);
+
 // Background Music Component
 const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -305,6 +316,7 @@ export default function App() {
   // Animation States
   const [shuffling, setShuffling] = useState(false);
   const [showExchangeAlert, setShowExchangeAlert] = useState(false);
+  const [showLeaderOverlay, setShowLeaderOverlay] = useState(false);
   
   const prevRoomRef = useRef<number | null>(null);
 
@@ -363,6 +375,17 @@ export default function App() {
           prevRoomRef.current = currentPlayer.room_number;
       }
   }, [currentPlayer?.room_number, currentRoom?.status]);
+
+  // --- Leader Appointment Overlay Logic ---
+  useEffect(() => {
+      // Show overlay if I am leader AND game is paused (Leader Appointment Phase)
+      // Note: We only want to show this when status IS LEADER, and we are WAITING for next round
+      if (currentPlayer?.is_leader && currentRoom?.status === GameStatus.PAUSED) {
+          setShowLeaderOverlay(true);
+      } else {
+          setShowLeaderOverlay(false);
+      }
+  }, [currentPlayer?.is_leader, currentRoom?.status]);
 
   // --- God Mode: Watcher for Synchronized Exchange ---
   useEffect(() => {
@@ -936,6 +959,10 @@ export default function App() {
             const isReady = roomNum === 1 ? currentRoom?.exchange_status?.room1_ready : currentRoom?.exchange_status?.room2_ready;
             const swapExecuted = currentRoom?.exchange_status?.swap_executed;
             const isPaused = currentRoom?.status === GameStatus.PAUSED;
+            const isLastRound = currentRoom && currentRoom.current_round >= currentRoom.settings.rounds;
+            
+            // Can edit leaders only if Paused AND Swap has happened AND NOT LAST ROUND
+            const canEditLeader = isPaused && swapExecuted && !isLastRound;
 
             return (
                 <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-2xl border border-white/10 shadow-sm overflow-hidden">
@@ -946,7 +973,7 @@ export default function App() {
                      {/* Status Banner */}
                      {isPaused && (
                          <div className={`text-xs font-bold p-2 text-center ${swapExecuted ? 'bg-purple-500 text-white' : isReady ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black animate-pulse'}`}>
-                             {swapExecuted ? '等待任命领袖...' : isReady ? '已准备就绪' : '等待领袖确认...'}
+                             {swapExecuted ? (isLastRound ? '最后一轮交换完成 - 请宣判结果' : '等待任命领袖...') : isReady ? '已准备就绪' : '等待领袖确认...'}
                          </div>
                      )}
 
@@ -976,11 +1003,23 @@ export default function App() {
                                         <button 
                                             onClick={async (e) => {
                                                 e.stopPropagation();
-                                                const { error } = await supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id);
+                                                if (!canEditLeader) return;
+                                                
+                                                // Constraint: Only 1 leader per room. If setting to TRUE, unset others.
+                                                const isBecomingLeader = !p.is_leader;
+                                                if (isBecomingLeader) {
+                                                    const existingLeader = roomPlayers.find(rp => rp.is_leader && rp.id !== p.id);
+                                                    if (existingLeader) {
+                                                        await supabase.from('players').update({ is_leader: false }).eq('id', existingLeader.id);
+                                                    }
+                                                }
+                                                
+                                                const { error } = await supabase.from('players').update({ is_leader: isBecomingLeader }).eq('id', p.id);
                                                 if(error) console.error("Update failed", error);
                                                 if(currentRoom) fetchPlayers(currentRoom.code);
                                             }}
-                                            className={`relative z-10 p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(isPaused && swapExecuted) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''}`}
+                                            disabled={!canEditLeader}
+                                            className={`relative z-10 p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(!p.is_leader && canEditLeader) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''} ${!canEditLeader ? 'opacity-30 cursor-not-allowed' : ''}`}
                                             title="Toggle Leader"
                                         >
                                             <CrownIcon />
@@ -1117,7 +1156,8 @@ export default function App() {
                                     <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : 'bg-white/10 border-white/20'}`}>
                                         <span className="opacity-50 text-[9px] mr-1">[{r.id}]</span>
                                         {r.name}
-                                        {!r.isKeyRole && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
+                                        {/* Allow delete if NOT Key Role OR Test Mode is Active */}
+                                        {(!r.isKeyRole || testMode) && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
                                     </div>
                                 ))}
                             </div>
@@ -1126,7 +1166,7 @@ export default function App() {
                         {/* Standard Roles Accordion */}
                         <div className="space-y-1">
                             <h3 className="text-sm font-bold opacity-50 mb-2">备选卡牌</h3>
-                            {BASE_ROLES.filter(r => !r.isKeyRole && !['blue_team', 'red_team'].includes(r.id)).map(r => (
+                            {BASE_ROLES.filter(r => ((!r.isKeyRole || testMode) && !['blue_team', 'red_team'].includes(r.id))).map(r => (
                                 <div key={r.id} className="bg-white/5 rounded border border-white/10 overflow-hidden">
                                     <button 
                                         onClick={() => setExpandedRole(expandedRole === r.id ? null : r.id)}
@@ -1191,7 +1231,7 @@ export default function App() {
                     {currentRoom?.status === GameStatus.LOBBY && (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between bg-black/20 p-2 rounded-lg">
-                                <span className="text-xs font-bold text-white/70">测试模式 (不限人数)</span>
+                                <span className="text-xs font-bold text-white/70">测试模式 (不限人数, 自由卡组)</span>
                                 <button 
                                     onClick={() => setTestMode(!testMode)}
                                     className={`w-12 h-6 rounded-full relative transition ${testMode ? 'bg-[#5abb2d]' : 'bg-white/20'}`}
@@ -1372,6 +1412,7 @@ export default function App() {
         
         {/* Alerts Overlay */}
         {showExchangeAlert && <ExchangeAlert />}
+        {showLeaderOverlay && <LeaderAppointmentOverlay />}
 
         {/* Main Application Logic */}
         {renderContent()}
