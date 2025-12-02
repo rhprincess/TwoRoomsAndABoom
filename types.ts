@@ -66,4 +66,8 @@ export interface Room {
     room1_target_id?: string;
     room2_target_id?: string;
   };
+  exchange_status?: {
+    room1_done: boolean;
+    room2_done: boolean;
+  };
 }
