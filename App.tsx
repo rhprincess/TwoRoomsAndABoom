@@ -319,6 +319,7 @@ export default function App() {
   const [showLeaderOverlay, setShowLeaderOverlay] = useState(false);
   
   const prevRoomRef = useRef<number | null>(null);
+  const prevIsLeader = useRef<boolean>(false);
 
   // --- Realtime ---
   useEffect(() => {
@@ -378,14 +379,25 @@ export default function App() {
 
   // --- Leader Appointment Overlay Logic ---
   useEffect(() => {
-      // Show overlay if I am leader AND game is paused (Leader Appointment Phase)
-      // Note: We only want to show this when status IS LEADER, and we are WAITING for next round
-      if (currentPlayer?.is_leader && currentRoom?.status === GameStatus.PAUSED) {
+      const isLeader = !!currentPlayer?.is_leader;
+      const isPaused = currentRoom?.status === GameStatus.PAUSED;
+      const swapExecuted = currentRoom?.exchange_status?.swap_executed;
+
+      // Only trigger if:
+      // 1. I became leader just now (Previous was false, Now is true)
+      // 2. We are in the PAUSED phase
+      // 3. The swap has happened (God is appointing for next round)
+      if (isLeader && !prevIsLeader.current && isPaused && swapExecuted) {
           setShowLeaderOverlay(true);
-      } else {
-          setShowLeaderOverlay(false);
+          const timer = setTimeout(() => {
+              setShowLeaderOverlay(false);
+          }, 3000);
+          return () => clearTimeout(timer);
       }
-  }, [currentPlayer?.is_leader, currentRoom?.status]);
+
+      // Update ref for next render
+      prevIsLeader.current = isLeader;
+  }, [currentPlayer?.is_leader, currentRoom?.status, currentRoom?.exchange_status?.swap_executed]);
 
   // --- God Mode: Watcher for Synchronized Exchange ---
   useEffect(() => {
