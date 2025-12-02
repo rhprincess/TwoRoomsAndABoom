@@ -289,7 +289,7 @@ export default function App() {
   // God Mode States
   const [cardSets, setCardSets] = useState<CardSet[]>([]);
   const [customRoleName, setCustomRoleName] = useState('');
-  const [customRoleId, setCustomRoleId] = useState(''); // New ID field
+  const [customRoleId, setCustomRoleId] = useState('');
   const [customRoleDesc, setCustomRoleDesc] = useState('');
   const [customRoleWin, setCustomRoleWin] = useState('');
   const [customRoleTeam, setCustomRoleTeam] = useState<Team>(Team.GREY);
@@ -297,6 +297,11 @@ export default function App() {
   const [saveSetName, setSaveSetName] = useState('');
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
+
+  // Game Config States
+  const [configRounds, setConfigRounds] = useState(3);
+  const [configRoundLengths, setConfigRoundLengths] = useState('5,3,1');
+  const [configExchangeCounts, setConfigExchangeCounts] = useState('1,1,1');
 
   // Animation States
   const [shuffling, setShuffling] = useState(false);
@@ -360,45 +365,42 @@ export default function App() {
       }
   }, [currentPlayer?.room_number, currentRoom?.status]);
 
-  // --- God Mode: Leader Watcher (Auto-Reassign when both exchanges done) ---
+  // --- God Mode: Watcher for Synchronized Exchange ---
   useEffect(() => {
-      const checkAndAssignLeaders = async () => {
-          if (!currentRoom || !currentPlayer?.is_god || currentRoom.status !== GameStatus.PAUSED) return;
+      if (!currentRoom || !currentPlayer?.is_god || currentRoom.status !== GameStatus.PAUSED) return;
 
-          const r1Done = currentRoom.exchange_status?.room1_done;
-          const r2Done = currentRoom.exchange_status?.room2_done;
+      const performBatchSwap = async () => {
+          const r1Ready = currentRoom.exchange_status?.room1_ready;
+          const r2Ready = currentRoom.exchange_status?.room2_ready;
+          const executed = currentRoom.exchange_status?.swap_executed;
 
-          if (r1Done && r2Done) {
-              // Both rooms have finished exchanging. Ensure they have leaders.
-              // We fetch fresh data to be absolutely sure we don't act on stale state
-              const { data: dbPlayers } = await supabase.from('players').eq('room_code', currentRoom.code);
-              if (!dbPlayers) return;
+          if (r1Ready && r2Ready && !executed) {
+              console.log("Both rooms ready, executing swap...");
+              
+              const r1TargetIds = currentRoom.pending_exchanges?.room1_target_ids || [];
+              const r2TargetIds = currentRoom.pending_exchanges?.room2_target_ids || [];
 
-              const r1 = dbPlayers.filter(p => p.room_number === 1 && !p.is_god);
-              const r2 = dbPlayers.filter(p => p.room_number === 2 && !p.is_god);
-
-              const r1Has = r1.some(p => p.is_leader);
-              const r2Has = r2.some(p => p.is_leader);
-
-              if (!r1Has && r1.length > 0) {
-                  const p = r1[Math.floor(Math.random() * r1.length)];
-                  await supabase.from('players').update({ is_leader: true }).eq('id', p.id);
-                  console.log("God: Auto-assigned leader for Room 1:", p.name);
+              // Perform Swaps
+              for (const id of r1TargetIds) {
+                  await supabase.from('players').update({ room_number: 2, is_leader: false }).eq('id', id);
+              }
+              for (const id of r2TargetIds) {
+                  await supabase.from('players').update({ room_number: 1, is_leader: false }).eq('id', id);
               }
 
-              if (!r2Has && r2.length > 0) {
-                  const p = r2[Math.floor(Math.random() * r2.length)];
-                  await supabase.from('players').update({ is_leader: true }).eq('id', p.id);
-                  console.log("God: Auto-assigned leader for Room 2:", p.name);
-              }
+              // Update Room Status
+              const nextStatus = { ...currentRoom.exchange_status, swap_executed: true };
+              await supabase.from('rooms').update({ 
+                  exchange_status: nextStatus,
+                  pending_exchanges: {} // Clear pending
+              }).eq('code', currentRoom.code);
           }
       };
 
-      if (currentPlayer?.is_god) {
-          const timeout = setTimeout(checkAndAssignLeaders, 1000); // Small debounce to allow DB propogation
-          return () => clearTimeout(timeout);
-      }
-  }, [currentRoom, currentPlayer, players]); // Re-run when currentRoom or players update
+      const timeout = setTimeout(performBatchSwap, 500); // Debounce
+      return () => clearTimeout(timeout);
+  }, [currentRoom, currentPlayer?.is_god]);
+
 
   const fetchCardSets = async () => {
       const { data } = await supabase.from('card_sets').select('*').order('created_at');
@@ -452,10 +454,16 @@ export default function App() {
             current_round: 0,
             round_end_time: null,
             winner: null,
-            settings: { rounds: 3, round_lengths: DEFAULT_ROUND_LENGTHS, min_players: 6, debug_mode: false },
+            settings: { 
+                rounds: 3, 
+                round_lengths: DEFAULT_ROUND_LENGTHS, 
+                exchange_counts: [1, 1, 1],
+                min_players: 6, 
+                debug_mode: false 
+            },
             custom_roles: initialRoles,
             pending_exchanges: {},
-            exchange_status: { room1_done: false, room2_done: false }
+            exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
           };
           const { error: createError } = await supabase.from('rooms').insert(newRoom);
           if (createError) throw createError;
@@ -544,6 +552,18 @@ export default function App() {
           }
       }
 
+      // Config Parsing
+      const lengths = configRoundLengths.split(',').map(s => parseInt(s.trim()) * 60);
+      const exchanges = configExchangeCounts.split(',').map(s => parseInt(s.trim()));
+      
+      // Update settings
+      const newSettings = {
+          ...currentRoom.settings,
+          rounds: configRounds,
+          round_lengths: lengths,
+          exchange_counts: exchanges
+      };
+
       // Logic
       const deck = [...currentRoom.custom_roles];
       // Logic: Ensure we have enough cards
@@ -584,8 +604,7 @@ export default function App() {
         }).eq('id', shuffledPlayers[i].id);
       }
       
-      // Assign Initial Leaders
-      // Try to find President for Room 1, Bomber for Room 2. If not, random.
+      // Assign Initial Leaders (Random for Round 1)
       const room1Players = shuffledPlayers.slice(0, half);
       const room2Players = shuffledPlayers.slice(half);
 
@@ -598,8 +617,9 @@ export default function App() {
       await supabase.from('rooms').update({
           status: GameStatus.DISTRIBUTING,
           current_round: 0,
-          pending_exchanges: {}, // Reset pending exchanges
-          exchange_status: { room1_done: false, room2_done: false }
+          settings: newSettings, // Apply Config
+          pending_exchanges: {}, 
+          exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
       }).eq('code', currentRoom.code);
 
       setTimeout(async () => {
@@ -628,24 +648,24 @@ export default function App() {
         current_round: 1,
         round_end_time: endTime.toISOString(),
         pending_exchanges: {},
-        exchange_status: { room1_done: false, room2_done: false }
+        exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
       }).eq('code', currentRoom.code);
   };
 
   const pauseRound = async () => {
-    // When pausing (round end), reset pending exchanges for the new selection phase
+    // When pausing (round end), reset exchange status
     await supabase.from('rooms').update({ 
         status: GameStatus.PAUSED, 
         round_end_time: null, 
         pending_exchanges: {},
-        exchange_status: { room1_done: false, room2_done: false }
+        exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
     }).eq('code', currentRoom?.code);
   };
 
   const nextRound = async () => {
       if(!currentRoom) return;
       const nextR = currentRoom.current_round + 1;
-      if (nextR > 3) return; // Do not proceed past round 3
+      if (nextR > currentRoom.settings.rounds) return;
       
       const length = currentRoom.settings.round_lengths[nextR - 1] || 60;
       const endTime = new Date(Date.now() + length * 1000);
@@ -653,71 +673,55 @@ export default function App() {
         status: GameStatus.PLAYING,
         current_round: nextR,
         round_end_time: endTime.toISOString(),
-        pending_exchanges: {}, // Clear selection when next round starts
-        exchange_status: { room1_done: false, room2_done: false }
+        pending_exchanges: {}, 
+        exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
       }).eq('code', currentRoom.code);
   };
 
   const movePlayer = async (player: Player, targetRoom: 1 | 2) => {
       if (!currentRoom) return;
-
-      const sourceRoom = player.room_number;
-      let updates: any = { room_number: targetRoom };
-
-      // Leader Reassignment Logic
-      if (player.is_leader && sourceRoom) {
-          updates.is_leader = false;
-          // Find another player in source room to be leader
-          const candidates = players.filter(p => p.room_number === sourceRoom && p.id !== player.id && !p.is_god);
-          if (candidates.length > 0) {
-              const nextLeader = candidates[Math.floor(Math.random() * candidates.length)];
-              await supabase.from('players').update({ is_leader: true }).eq('id', nextLeader.id);
-          }
-      }
-
-      await supabase.from('players').update(updates).eq('id', player.id);
+      // Admin Manual Move
+      await supabase.from('players').update({ room_number: targetRoom, is_leader: false }).eq('id', player.id);
   };
 
   const handleLeaderExchangeSelect = async (targetId: string) => {
       if (!currentPlayer || !currentPlayer.is_leader || !currentRoom) return;
       if (!currentPlayer.room_number) return;
+      
+      // Determine selection limit based on round settings
+      const currentRoundIdx = (currentRoom.current_round || 1) - 1;
+      const maxSelect = currentRoom.settings.exchange_counts[currentRoundIdx] || 1;
 
-      const currentExchanges = currentRoom.pending_exchanges || {};
-      const newExchanges = {
-          ...currentExchanges,
-          [currentPlayer.room_number === 1 ? 'room1_target_id' : 'room2_target_id']: targetId
-      };
+      const key = currentPlayer.room_number === 1 ? 'room1_target_ids' : 'room2_target_ids';
+      const currentSelection: string[] = currentRoom.pending_exchanges?.[key] || [];
 
-      await supabase.from('rooms').update({ pending_exchanges: newExchanges }).eq('code', currentRoom.code);
+      let newSelection;
+      if (currentSelection.includes(targetId)) {
+          newSelection = currentSelection.filter(id => id !== targetId);
+      } else {
+          if (currentSelection.length >= maxSelect) {
+              alert(`本回合最多只能交换 ${maxSelect} 人`);
+              return;
+          }
+          newSelection = [...currentSelection, targetId];
+      }
+
+      await supabase.from('rooms').update({ 
+          pending_exchanges: { ...currentRoom.pending_exchanges, [key]: newSelection } 
+      }).eq('code', currentRoom.code);
   };
 
-  // Triggered by Leader directly
+  // Triggered by Leader directly -> Sets "READY" status
   const handleLeaderConfirmExchange = async () => {
       if (!currentPlayer || !currentPlayer.is_leader || !currentRoom) return;
       
       const myRoom = currentPlayer.room_number;
       if (!myRoom) return;
 
-      const targetId = myRoom === 1 ? currentRoom.pending_exchanges?.room1_target_id : currentRoom.pending_exchanges?.room2_target_id;
-      if (!targetId) return;
-
-      const playerToMove = players.find(p => p.id === targetId);
-      if (!playerToMove) return;
-
-      const targetRoom = myRoom === 1 ? 2 : 1;
-
-      // 1. Move player and strip leadership (Do NOT re-elect yet)
-      // The God client watcher will handle re-election when both rooms are done.
-      await supabase.from('players').update({ room_number: targetRoom, is_leader: false }).eq('id', targetId);
-
-      // 2. Mark exchange as done for this room
-      // Fetch latest room to ensure we don't overwrite other room's status
-      const { data: latestRoom } = await supabase.from('rooms').select('*').eq('code', currentRoom.code).single();
-      if (!latestRoom) return;
-
+      // Mark this room as READY
       const nextStatus = {
-          ...latestRoom.exchange_status,
-          [myRoom === 1 ? 'room1_done' : 'room2_done']: true
+          ...currentRoom.exchange_status,
+          [myRoom === 1 ? 'room1_ready' : 'room2_ready']: true
       };
       
       await supabase.from('rooms').update({ exchange_status: nextStatus }).eq('code', currentRoom.code);
@@ -749,7 +753,7 @@ export default function App() {
         round_end_time: null,
         winner: null,
         pending_exchanges: {},
-        exchange_status: { room1_done: false, room2_done: false }
+        exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
     }).eq('code', currentRoom.code);
 
     // Reset All Players (keep connection, remove roles)
@@ -923,10 +927,12 @@ export default function App() {
         const renderRoomColumn = (roomNum: 1 | 2) => {
             const roomPlayers = players.filter(p => !p.is_god && p.room_number === roomNum);
             
-            // Check for pending exchanges selected by Leader
-            const selectedForExchangeId = roomNum === 1 ? currentRoom?.pending_exchanges?.room1_target_id : currentRoom?.pending_exchanges?.room2_target_id;
-            const targetPlayerName = players.find(p => p.id === selectedForExchangeId)?.name;
-            const isDone = roomNum === 1 ? currentRoom?.exchange_status?.room1_done : currentRoom?.exchange_status?.room2_done;
+            // Pending Exchanges (Array)
+            const targetIds = roomNum === 1 ? currentRoom?.pending_exchanges?.room1_target_ids || [] : currentRoom?.pending_exchanges?.room2_target_ids || [];
+            
+            const isReady = roomNum === 1 ? currentRoom?.exchange_status?.room1_ready : currentRoom?.exchange_status?.room2_ready;
+            const swapExecuted = currentRoom?.exchange_status?.swap_executed;
+            const isPaused = currentRoom?.status === GameStatus.PAUSED;
 
             return (
                 <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-2xl border border-white/10 shadow-sm overflow-hidden">
@@ -934,20 +940,16 @@ export default function App() {
                         <span>房间 {roomNum}</span>
                         <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
                     </div>
-                     {/* Nomination Banner */}
-                     {isDone ? (
-                         <div className="bg-green-500 text-white text-xs font-bold p-2 text-center">
-                             交换已完成
+                     {/* Status Banner */}
+                     {isPaused && (
+                         <div className={`text-xs font-bold p-2 text-center ${swapExecuted ? 'bg-purple-500 text-white' : isReady ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black animate-pulse'}`}>
+                             {swapExecuted ? '等待任命领袖...' : isReady ? '已准备就绪' : '等待领袖确认...'}
                          </div>
-                     ) : selectedForExchangeId ? (
-                        <div className="bg-yellow-500 text-black text-xs font-bold p-2 text-center animate-pulse">
-                            领袖已提名: {targetPlayerName} (等待确认)
-                        </div>
-                    ) : null}
+                     )}
 
                     <div className="p-2 space-y-2 overflow-y-auto flex-1">
                         {roomPlayers.map(p => {
-                            const isSelected = selectedForExchangeId === p.id;
+                            const isSelected = targetIds.includes(p.id);
                             return (
                                 <div key={p.id} className={`relative p-2 rounded-lg border transition group ${isSelected ? 'bg-yellow-500/20 border-yellow-500' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
                                     <div className="flex justify-between items-start mb-1">
@@ -959,7 +961,7 @@ export default function App() {
                                                     <span className={`w-2 h-2 rounded-full inline-block ml-0.5 ${p.condition_met ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                                 </span>
                                             )}
-                                            {isSelected && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded font-black">选定</span>}
+                                            {isSelected && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded font-black">交换</span>}
                                         </span>
                                         {p.role && (
                                             <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-[#de0029] text-white' : p.team === Team.BLUE ? 'bg-[#82a0d2] text-[#4c4595]' : 'bg-[#9b9794] text-[#656362]'}`}>
@@ -976,12 +978,12 @@ export default function App() {
                                             <CrownIcon />
                                         </button>
                                         {roomNum === 1 ? (
-                                            <button onClick={() => movePlayer(p, 2)} className={`text-[10px] px-2 py-1 rounded font-bold transition ${isSelected ? 'bg-yellow-500 text-black animate-pulse' : 'bg-white/10 hover:bg-white/20 text-white/70'}`}>
-                                                {isSelected ? '确认移至 2 →' : '移至 2 →'}
+                                            <button onClick={() => movePlayer(p, 2)} className={`text-[10px] px-2 py-1 rounded font-bold transition bg-white/10 hover:bg-white/20 text-white/70`}>
+                                                移至 2 →
                                             </button>
                                         ) : (
-                                            <button onClick={() => movePlayer(p, 1)} className={`text-[10px] px-2 py-1 rounded font-bold transition ${isSelected ? 'bg-yellow-500 text-black animate-pulse' : 'bg-white/10 hover:bg-white/20 text-white/70'}`}>
-                                                {isSelected ? '← 确认移至 1' : '← 移至 1'}
+                                            <button onClick={() => movePlayer(p, 1)} className={`text-[10px] px-2 py-1 rounded font-bold transition bg-white/10 hover:bg-white/20 text-white/70`}>
+                                                ← 移至 1
                                             </button>
                                         )}
                                     </div>
@@ -993,10 +995,13 @@ export default function App() {
             );
         };
 
-        const allExchangesDone = currentRoom?.exchange_status?.room1_done && currentRoom?.exchange_status?.room2_done;
-        // In paused state, allow win ONLY if exchanges are done, OR if manually overrided (technically God can always click, but let's guide them)
-        // Prompt says "最后的人质选择环节需要玩家选择完交换的人质后上帝才能进行游戏宣判"
-        const canDeclareWin = currentRoom?.status !== GameStatus.PAUSED || allExchangesDone;
+        const swapExecuted = currentRoom?.exchange_status?.swap_executed;
+        // Validation for Next Round: Both rooms must have exactly 1 leader
+        const r1LeaderCount = players.filter(p => !p.is_god && p.room_number === 1 && p.is_leader).length;
+        const r2LeaderCount = players.filter(p => !p.is_god && p.room_number === 2 && p.is_leader).length;
+        const leadersAssigned = r1LeaderCount === 1 && r2LeaderCount === 1;
+
+        const canDeclareWin = swapExecuted || currentRoom?.status !== GameStatus.PAUSED;
 
         return (
             <div className="h-screen bg-[#2d285e] text-white flex flex-col font-sans overflow-hidden z-20 relative">
@@ -1016,6 +1021,27 @@ export default function App() {
 
                 {currentRoom?.status === GameStatus.LOBBY ? (
                     <div className="flex-grow p-4 overflow-y-auto pb-24 space-y-6">
+                        {/* Game Configuration */}
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                <span className="text-sm font-bold">游戏设置</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label className="block text-white/50 mb-1">回合数</label>
+                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
+                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
+                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Live Card Preview */}
                         <div className="w-full max-w-[240px] mx-auto aspect-[3/4] font-traditional">
                             <CardDisplay 
@@ -1131,17 +1157,9 @@ export default function App() {
                     // GAME VIEW (God Dashboard)
                     <div className="flex-grow flex flex-col p-2 gap-2 min-h-0">
                         {currentRoom?.status === GameStatus.PAUSED && (
-                             <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10">
-                                 <div className="text-xs text-center text-orange-200">
-                                     交换阶段：等待双方领袖确认...
-                                 </div>
-                                 <div className="flex gap-2 text-xs">
-                                     <div className={`flex-1 p-2 rounded text-center ${currentRoom.exchange_status?.room1_done ? 'bg-green-500/20 text-green-300' : 'bg-white/5 text-white/30'}`}>
-                                         房间1: {currentRoom.exchange_status?.room1_done ? '已完成' : '等待确认...'}
-                                     </div>
-                                     <div className={`flex-1 p-2 rounded text-center ${currentRoom.exchange_status?.room2_done ? 'bg-green-500/20 text-green-300' : 'bg-white/5 text-white/30'}`}>
-                                         房间2: {currentRoom.exchange_status?.room2_done ? '已完成' : '等待确认...'}
-                                     </div>
+                             <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10 animate-in fade-in">
+                                 <div className="text-xs text-center font-bold text-orange-200">
+                                     {!swapExecuted ? "交换阶段：等待领袖确认交换..." : "任命阶段：请点击皇冠设置各房间新领袖"}
                                  </div>
                              </div>
                         )}
@@ -1179,17 +1197,17 @@ export default function App() {
                         <button onClick={pauseRound} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">暂停 / 结束回合</button>
                     )}
                     {currentRoom?.status === GameStatus.PAUSED && (
-                        currentRoom.current_round < 3 ? (
+                        currentRoom.current_round < currentRoom.settings.rounds ? (
                             <button 
                                 onClick={nextRound} 
-                                disabled={!allExchangesDone}
+                                disabled={!swapExecuted || !leadersAssigned}
                                 className="w-full bg-[#82a0d2] text-[#4c4595] py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {allExchangesDone ? `进入第 ${currentRoom.current_round + 1} 回合` : '等待所有人质交换完成...'}
+                                {!swapExecuted ? '等待交换...' : !leadersAssigned ? '请先任命各房间领袖 (每房1人)' : `进入第 ${currentRoom.current_round + 1} 回合`}
                             </button>
                         ) : (
                             <div className="w-full bg-black/40 text-white text-center py-3 rounded-xl font-bold border border-white/20">
-                                {allExchangesDone ? '所有人质已就位 - 请宣判结果' : '等待最后人质交换完成...'}
+                                {swapExecuted ? '所有人质已就位 - 请宣判结果' : '等待最后人质交换完成...'}
                             </div>
                         )
                     )}
@@ -1203,45 +1221,65 @@ export default function App() {
         // Exchange Selection Mode for Leader
         if (currentRoom?.status === GameStatus.PAUSED && currentPlayer.is_leader) {
              const myRoomPlayers = players.filter(p => p.room_number === currentPlayer.room_number && !p.is_god);
-             const myPendingTarget = currentPlayer.room_number === 1 ? currentRoom.pending_exchanges?.room1_target_id : currentRoom.pending_exchanges?.room2_target_id;
-             const myExchangeDone = currentPlayer.room_number === 1 ? currentRoom.exchange_status?.room1_done : currentRoom.exchange_status?.room2_done;
+             const targetIds = currentPlayer.room_number === 1 ? currentRoom.pending_exchanges?.room1_target_ids || [] : currentRoom.pending_exchanges?.room2_target_ids || [];
+             
+             const myReady = currentPlayer.room_number === 1 ? currentRoom.exchange_status?.room1_ready : currentRoom.exchange_status?.room2_ready;
+             const swapExecuted = currentRoom.exchange_status?.swap_executed;
 
-             // If my room has finished exchanging, show waiting screen
-             if (myExchangeDone) {
+             // Selection Logic Limit
+             const currentRoundIdx = (currentRoom.current_round || 1) - 1;
+             const requiredCount = currentRoom.settings.exchange_counts[currentRoundIdx] || 1;
+
+             if (swapExecuted) {
                  return (
                     <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
                         <CheckCircleIcon />
-                        <h2 className="text-2xl font-black text-white mt-4">交换已完成</h2>
-                        <p className="text-white/50 mt-2">等待另一房间确认...</p>
+                        <h2 className="text-2xl font-black text-white mt-4">交换已执行</h2>
+                        <p className="text-white/50 mt-2">等待上帝任命下一轮领袖...</p>
+                    </div>
+                 );
+             }
+
+             if (myReady) {
+                 return (
+                    <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
+                        <div className="animate-spin text-4xl mb-4">⏳</div>
+                        <h2 className="text-2xl font-black text-white mt-4">已确认</h2>
+                        <p className="text-white/50 mt-2">等待另一房间确认交换...</p>
                     </div>
                  );
              }
              
              return (
                 <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
-                    <h2 className="text-2xl font-black text-white text-center mb-6 font-traditional">选择一名人质交换</h2>
+                    <h2 className="text-2xl font-black text-white text-center mb-1 font-traditional">选择交换人质</h2>
+                    <p className="text-center text-white/50 mb-6 text-xs">需选择 {requiredCount} 人</p>
+                    
                     <div className="flex-grow space-y-3 overflow-y-auto custom-scrollbar">
-                        {myRoomPlayers.map(p => (
-                            <button 
-                                key={p.id}
-                                onClick={() => handleLeaderExchangeSelect(p.id)}
-                                className={`w-full p-4 rounded-xl flex justify-between items-center transition ${myPendingTarget === p.id ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                            >
-                                <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
-                                {myPendingTarget === p.id && <CheckCircleIcon />}
-                            </button>
-                        ))}
+                        {myRoomPlayers.map(p => {
+                            const isSelected = targetIds.includes(p.id);
+                            return (
+                                <button 
+                                    key={p.id}
+                                    onClick={() => handleLeaderExchangeSelect(p.id)}
+                                    className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                >
+                                    <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
+                                    {isSelected && <CheckCircleIcon />}
+                                </button>
+                            );
+                        })}
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-white/10">
                          <button 
                             onClick={handleLeaderConfirmExchange}
-                            disabled={!myPendingTarget}
+                            disabled={targetIds.length !== requiredCount}
                             className="w-full bg-[#5abb2d] text-white py-4 rounded-xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                          >
-                             确认交换
+                             确认交换 ({targetIds.length}/{requiredCount})
                          </button>
-                         <p className="mt-2 text-center text-white/30 text-xs">确认后该玩家将立即移至对方房间</p>
+                         <p className="mt-2 text-center text-white/30 text-xs">需双方领袖都确认后才会执行</p>
                     </div>
                 </div>
              );

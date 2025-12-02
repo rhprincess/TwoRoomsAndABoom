@@ -58,16 +58,18 @@ export interface Room {
   settings: {
     rounds: number;
     round_lengths: number[]; // [300, 180, 60] seconds
+    exchange_counts: number[]; // [1, 1, 1] hostages per round
     min_players: number;
     debug_mode: boolean;
   };
   custom_roles: Role[]; // The active "Special Roles" deck list
   pending_exchanges?: {
-    room1_target_id?: string;
-    room2_target_id?: string;
+    room1_target_ids?: string[]; // Array of IDs
+    room2_target_ids?: string[]; // Array of IDs
   };
   exchange_status?: {
-    room1_done: boolean;
-    room2_done: boolean;
+    room1_ready: boolean;
+    room2_ready: boolean;
+    swap_executed: boolean;
   };
 }
