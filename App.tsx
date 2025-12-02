@@ -382,11 +382,15 @@ export default function App() {
 
               // Perform Swaps
               for (const id of r1TargetIds) {
-                  await supabase.from('players').update({ room_number: 2, is_leader: false }).eq('id', id);
+                  await supabase.from('players').update({ room_number: 2 }).eq('id', id);
               }
               for (const id of r2TargetIds) {
-                  await supabase.from('players').update({ room_number: 1, is_leader: false }).eq('id', id);
+                  await supabase.from('players').update({ room_number: 1 }).eq('id', id);
               }
+
+              // IMPORTANT: Reset Leaders for EVERYONE to force re-appointment
+              // (Unless it's the final round where no leader is needed, but clearing is safer)
+              await supabase.from('players').update({ is_leader: false }).eq('room_code', currentRoom.code);
 
               // Update Room Status
               const nextStatus = { ...currentRoom.exchange_status, swap_executed: true };
@@ -972,7 +976,7 @@ export default function App() {
                                     <div className="flex items-center justify-between mt-2">
                                         <button 
                                             onClick={() => supabase.from('players').update({ is_leader: !p.is_leader }).eq('id', p.id)}
-                                            className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'}`}
+                                            className={`p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(isPaused && swapExecuted) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''}`}
                                             title="Toggle Leader"
                                         >
                                             <CrownIcon />
@@ -999,7 +1003,10 @@ export default function App() {
         // Validation for Next Round: Both rooms must have exactly 1 leader
         const r1LeaderCount = players.filter(p => !p.is_god && p.room_number === 1 && p.is_leader).length;
         const r2LeaderCount = players.filter(p => !p.is_god && p.room_number === 2 && p.is_leader).length;
-        const leadersAssigned = r1LeaderCount === 1 && r2LeaderCount === 1;
+        // Last Round Exception: If we are at the end of the last round (current_round == rounds), we don't need leaders to proceed to "End Game" state (handled by Can Declare Win)
+        // But for intermediate rounds, we need leaders.
+        const isLastRound = currentRoom && currentRoom.current_round >= currentRoom.settings.rounds;
+        const leadersAssigned = (r1LeaderCount === 1 && r2LeaderCount === 1) || isLastRound;
 
         const canDeclareWin = swapExecuted || currentRoom?.status !== GameStatus.PAUSED;
 
@@ -1009,6 +1016,11 @@ export default function App() {
                     <div className="flex items-center gap-3">
                         <span className="font-mono font-bold text-xl">{currentRoom?.code}</span>
                         <span className="bg-[#5abb2d] text-xs px-2 py-1 rounded font-bold">GOD</span>
+                        {currentRoom?.current_round ? (
+                             <span className="bg-white/10 text-xs px-2 py-1 rounded font-mono border border-white/20">
+                                Round {currentRoom.current_round} / {currentRoom.settings.rounds}
+                             </span>
+                        ) : null}
                     </div>
                     <div className="flex gap-2">
                         <button disabled={!canDeclareWin} onClick={() => handleGameEnd(Team.RED)} className="bg-[#de0029] text-white px-3 py-1 rounded text-xs font-bold border border-white/20 hover:scale-105 transition disabled:opacity-30 disabled:cursor-not-allowed">红胜</button>
@@ -1298,6 +1310,12 @@ export default function App() {
                             <div className="text-xs text-white/60">房间 {currentPlayer.room_number || '?'}</div>
                         </div>
                     </div>
+                    {/* Round Info for Player */}
+                    {currentRoom?.current_round ? (
+                         <div className="bg-white/10 text-xs px-3 py-1.5 rounded-full font-mono font-bold border border-white/20">
+                            Round {currentRoom.current_round} / {currentRoom.settings.rounds}
+                         </div>
+                    ) : null}
                     <TimerDisplay timeLeft={timeLeft} />
                 </div>
 
@@ -1308,12 +1326,11 @@ export default function App() {
                         className={`relative w-full max-w-[320px] aspect-[3/4] transition-transform duration-700 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
                     >
                         {/* FRONT (Hidden initially, Back of card visually) */}
-                        <div className="absolute inset-0 backface-hidden rounded-2xl border-4 border-white/20 bg-gradient-to-br from-[#4c4595] to-[#2d285e] flex items-center justify-center shadow-2xl">
-                             {/* UPDATED: Circle Question Mark */}
-                            <div className="w-24 h-24 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10">
-                                <span className="text-6xl font-black text-white/50">?</span>
-                            </div>
-                            <div className="absolute bottom-4 text-white/50 text-sm font-bold tracking-widest uppercase">点击查看</div>
+                        <div className="absolute inset-0 backface-hidden rounded-2xl border-4 border-white/20 bg-gradient-to-br from-[#4c4595] to-[#2d285e] flex flex-col items-center justify-center shadow-2xl p-6">
+                             {/* UPDATED: App Logo Style */}
+                            <div className="text-white/20 text-9xl absolute opacity-10">💣</div>
+                            <h2 className="text-4xl font-black text-white font-traditional mb-4 tracking-widest text-center">兩室<br/><span className="text-[#de0029]">一彈</span></h2>
+                            <div className="mt-8 border-2 border-white/30 px-6 py-2 rounded-full text-white/50 text-sm font-bold tracking-widest uppercase font-traditional group-hover:bg-white/10 transition">点击查看</div>
                         </div>
 
                         {/* BACK (Revealed, Actual Role) */}
