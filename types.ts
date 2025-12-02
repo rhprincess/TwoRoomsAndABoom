@@ -25,6 +25,7 @@ export interface Role {
   isCustom?: boolean;
   winCondition?: string;
   constraints?: string;
+  bgImage?: string; // URL for background image
 }
 
 export interface CardSet {

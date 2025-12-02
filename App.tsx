@@ -51,16 +51,6 @@ const FloatingIcons = memo(() => {
     );
 });
 
-// Exchange Alert Overlay
-const ExchangeAlert = () => (
-    <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center animate-in fade-in duration-300">
-        <div className="text-6xl mb-8 animate-bounce">🏃</div>
-        <h2 className="text-3xl font-black text-white text-center px-4 leading-relaxed font-traditional">
-            请前往交换的房间
-        </h2>
-    </div>
-);
-
 // Leader Appointment Overlay
 const LeaderAppointmentOverlay = () => (
     <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center animate-in fade-in duration-300 backdrop-blur-sm">
@@ -69,6 +59,16 @@ const LeaderAppointmentOverlay = () => (
             你已被任命为领袖
         </h2>
         <p className="text-white/70 text-lg font-bold">等待下一回合开启</p>
+    </div>
+);
+
+// Exchange Alert Overlay
+const ExchangeAlert = ({ targetRoom }: { targetRoom: number }) => (
+    <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center animate-in fade-in duration-300 backdrop-blur-sm">
+        <div className="text-6xl mb-8 animate-bounce">🏃</div>
+        <h2 className="text-3xl font-black text-white text-center px-4 leading-relaxed font-traditional mb-4">
+            请前往交换的房间 (房间 {targetRoom})
+        </h2>
     </div>
 );
 
@@ -203,22 +203,27 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
             style={{ borderColor: darkBg }}
         >
             {/* Top Section (3/4 height) */}
-            <div className="flex flex-row h-[75%]">
+            <div className="flex flex-row h-[75%] relative">
                 {/* Left Column: Light - Description (2/3 width) */}
-                {/* LEADER UI: Pale Yellow Border */}
-                <div className={`w-2/3 p-4 flex flex-col relative ${isLeader ? 'border-4 border-yellow-200' : ''}`} style={{ backgroundColor: lightBg, color: darkBg }}>
+                <div className={`w-2/3 p-4 flex flex-col relative overflow-hidden ${isLeader ? 'border-4 border-yellow-200' : ''}`} style={{ backgroundColor: lightBg, color: darkBg }}>
+                    
+                    {/* Background Image (Optional) */}
+                    {role.bgImage && (
+                        <img 
+                            src={role.bgImage} 
+                            alt="Background" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none mix-blend-multiply" 
+                        />
+                    )}
+
                      {/* Role Icon */}
-                    <div className="text-4xl mb-2 opacity-90">
+                    <div className="text-4xl mb-2 opacity-90 relative z-10">
                          {isRed ? '🧨' : isBlue ? '🛡️' : '🎲'}
                     </div>
                     {/* Description */}
-                    <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10">
+                    <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative">
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
-                        {role.winCondition && (
-                            <div className="mt-2 text-xs opacity-90 border-t border-current pt-1">
-                                <b>胜:</b> {role.winCondition}
-                            </div>
-                        )}
+                        
                         {/* Verification Section */}
                         {role.relatedRoleId && onVerify && (
                             <div className="mt-4 pt-2 border-t border-black/10">
@@ -263,15 +268,23 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
-                <div className="w-1/3 flex items-center justify-center relative border-l-2 border-black/10" style={{ backgroundColor: darkBg, color: 'white' }}>
-                    <div className="writing-vertical-rl text-3xl font-black font-traditional tracking-widest absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-full whitespace-nowrap">
-                        {role.name}
+                <div className="w-1/3 relative border-l-2 border-black/10 flex items-center justify-center overflow-hidden" style={{ backgroundColor: darkBg, color: 'white' }}>
+                    <div className="transform rotate-90 flex items-center gap-3 origin-center whitespace-nowrap pt-8">
+                         {/* Win Condition - Left of Name (Top physically after rotate) */}
+                         {role.winCondition && (
+                            <span className="text-xs font-bold uppercase tracking-wider opacity-90" style={{ color: lightBg }}>
+                                {role.winCondition}
+                            </span>
+                        )}
+                        <span className="text-3xl font-black font-traditional tracking-widest">
+                            {role.name}
+                        </span>
                     </div>
                 </div>
             </div>
 
             {/* Bottom Section: Footer (1/4 height) - Dark */}
-            <div className="h-[25%] flex items-center justify-between px-6 border-t-2 border-black/10" style={{ backgroundColor: darkBg, color: 'white' }}>
+            <div className="h-[25%] flex items-center justify-between px-6 border-t-2 border-black/10 relative z-10" style={{ backgroundColor: darkBg, color: 'white' }}>
                 <span className="text-3xl font-black font-traditional">{teamName}</span>
                 <div className="scale-150 transform drop-shadow-md">
                     <Icon />
@@ -304,6 +317,7 @@ export default function App() {
   const [customRoleWin, setCustomRoleWin] = useState('');
   const [customRoleTeam, setCustomRoleTeam] = useState<Team>(Team.GREY);
   const [customRoleRelation, setCustomRoleRelation] = useState('');
+  const [customRoleImg, setCustomRoleImg] = useState('');
   const [saveSetName, setSaveSetName] = useState('');
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
@@ -315,8 +329,8 @@ export default function App() {
 
   // Animation States
   const [shuffling, setShuffling] = useState(false);
-  const [showExchangeAlert, setShowExchangeAlert] = useState(false);
   const [showLeaderOverlay, setShowLeaderOverlay] = useState(false);
+  const [showExchangeAlert, setShowExchangeAlert] = useState(false);
   
   const prevRoomRef = useRef<number | null>(null);
   const prevIsLeader = useRef<boolean>(false);
@@ -360,22 +374,15 @@ export default function App() {
     }
   };
 
-  // --- Room Change Alert Logic ---
+  // --- Exchange Alert Logic ---
   useEffect(() => {
-      // Init ref
-      if (currentPlayer?.room_number && prevRoomRef.current === null) {
-          prevRoomRef.current = currentPlayer.room_number;
-      }
-      
-      // Check change
-      if (currentPlayer?.room_number && prevRoomRef.current !== null && currentPlayer.room_number !== prevRoomRef.current) {
-          if (currentRoom?.status === GameStatus.PAUSED) {
-              setShowExchangeAlert(true);
-              setTimeout(() => setShowExchangeAlert(false), 3000);
-          }
-          prevRoomRef.current = currentPlayer.room_number;
-      }
-  }, [currentPlayer?.room_number, currentRoom?.status]);
+    if (currentPlayer?.room_number && prevRoomRef.current && currentPlayer.room_number !== prevRoomRef.current) {
+        setShowExchangeAlert(true);
+        const timer = setTimeout(() => setShowExchangeAlert(false), 3000);
+        return () => clearTimeout(timer);
+    }
+    prevRoomRef.current = currentPlayer?.room_number || null;
+  }, [currentPlayer?.room_number]);
 
   // --- Leader Appointment Overlay Logic ---
   useEffect(() => {
@@ -982,10 +989,10 @@ export default function App() {
                         <span>房间 {roomNum}</span>
                         <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
                     </div>
-                     {/* Status Banner */}
-                     {isPaused && (
-                         <div className={`text-xs font-bold p-2 text-center ${swapExecuted ? 'bg-purple-500 text-white' : isReady ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black animate-pulse'}`}>
-                             {swapExecuted ? (isLastRound ? '最后一轮交换完成 - 请宣判结果' : '等待任命领袖...') : isReady ? '已准备就绪' : '等待领袖确认...'}
+                     {/* Status Banner - HIDE IF SWAP EXECUTED */}
+                     {isPaused && !swapExecuted && (
+                         <div className={`text-xs font-bold p-2 text-center ${isReady ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black animate-pulse'}`}>
+                             {isReady ? '已准备就绪' : '等待领袖确认...'}
                          </div>
                      )}
 
@@ -1067,7 +1074,7 @@ export default function App() {
 
         return (
             <div className="h-screen bg-[#2d285e] text-white flex flex-col font-sans overflow-hidden z-20 relative">
-                <header className="bg-[#4d4696] px-4 py-2 shadow-lg flex justify-between items-center border-b border-white/10 shrink-0 z-20">
+                <header className="bg-[#4d4696] px-4 py-2 shadow-lg flex flex-wrap justify-between items-center border-b border-white/10 shrink-0 z-20 gap-y-2">
                     <div className="flex items-center gap-3">
                         <span className="font-mono font-bold text-xl">{currentRoom?.code}</span>
                         <span className="bg-[#5abb2d] text-xs px-2 py-1 rounded font-bold">GOD</span>
@@ -1083,11 +1090,32 @@ export default function App() {
                         <button onClick={closeGame} className="bg-red-900/50 text-red-300 px-3 py-1 rounded text-xs font-bold">关闭</button>
                     </div>
                     {/* Consistent Timer Style */}
-                    <TimerDisplay timeLeft={timeLeft} />
+                    <div className="ml-auto sm:ml-0">
+                         <TimerDisplay timeLeft={timeLeft} />
+                    </div>
                 </header>
 
                 {currentRoom?.status === GameStatus.LOBBY ? (
                     <div className="flex-grow p-4 overflow-y-auto pb-24 space-y-6">
+                         {/* Save/Load Sets (MOVED TO TOP) */}
+                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                            <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                <span className="text-sm font-bold">卡组管理</span>
+                            </div>
+                            <div className="h-24 overflow-y-auto space-y-1 custom-scrollbar">
+                                {cardSets.map(set => (
+                                    <div key={set.id} className="flex justify-between items-center bg-black/20 p-2 rounded text-xs">
+                                        <span>{set.name} ({set.roles.length}卡)</span>
+                                        <button onClick={() => loadCardSet(set.id)} className="text-[#5abb2d] font-bold">加载</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                                <input value={saveSetName} onChange={e => setSaveSetName(e.target.value)} placeholder="新卡组名称" className="flex-1 bg-black/20 p-2 rounded text-xs outline-none border border-white/10" />
+                                <button onClick={saveCardSet} className="bg-[#4c4595] px-3 rounded text-xs font-bold">保存</button>
+                            </div>
+                        </div>
+
                         {/* Game Configuration */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
                              <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
@@ -1109,37 +1137,25 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Live Card Preview */}
-                        <div className="w-full max-w-[240px] mx-auto aspect-[3/4] font-traditional">
-                            <CardDisplay 
-                                role={{
-                                    id: customRoleId || 'preview',
-                                    name: customRoleName || '預覽',
-                                    description: customRoleDesc || '描述文本...',
-                                    team: customRoleTeam,
-                                    isKeyRole: false,
-                                    winCondition: customRoleWin,
-                                    relatedRoleId: customRoleRelation
-                                }} 
-                                team={customRoleTeam} 
-                                isLeader={true}
-                            />
-                        </div>
-                        
                         {/* Role Builder */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
                             <div className="flex gap-2">
-                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="flex-1 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
-                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="bg-black/20 p-2 rounded text-sm border border-white/10">
+                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
+                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
                                     <option value={Team.BLUE}>蓝队</option>
                                     <option value={Team.RED}>红队</option>
                                     <option value={Team.GREY}>灰队</option>
                                 </select>
                             </div>
-                            <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (英文, 如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <div className="grid grid-cols-2 gap-2">
+                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            </div>
                             <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
                             <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                             <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联角色ID (可选, 如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (可选)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            
                             <button 
                                 onClick={() => {
                                     if(!customRoleName) return;
@@ -1151,10 +1167,11 @@ export default function App() {
                                         isKeyRole: false, 
                                         isCustom: true, 
                                         winCondition: customRoleWin,
-                                        relatedRoleId: customRoleRelation || undefined
+                                        relatedRoleId: customRoleRelation || undefined,
+                                        bgImage: customRoleImg || undefined
                                     };
                                     updateRoles([...currentRoom.custom_roles, newRole]);
-                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation('');
+                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
                                 }}
                                 className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
                             >添加至卡组</button>
@@ -1202,22 +1219,23 @@ export default function App() {
                             ))}
                         </div>
 
-                        {/* Save/Load Sets (Bottom) */}
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                            <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
-                                <span className="text-sm font-bold">卡组管理</span>
-                            </div>
-                            <div className="h-24 overflow-y-auto space-y-1 custom-scrollbar">
-                                {cardSets.map(set => (
-                                    <div key={set.id} className="flex justify-between items-center bg-black/20 p-2 rounded text-xs">
-                                        <span>{set.name} ({set.roles.length}卡)</span>
-                                        <button onClick={() => loadCardSet(set.id)} className="text-[#5abb2d] font-bold">加载</button>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex gap-2 pt-2">
-                                <input value={saveSetName} onChange={e => setSaveSetName(e.target.value)} placeholder="新卡组名称" className="flex-1 bg-black/20 p-2 rounded text-xs outline-none border border-white/10" />
-                                <button onClick={saveCardSet} className="bg-[#4c4595] px-3 rounded text-xs font-bold">保存</button>
+                         {/* Live Card Preview */}
+                         <div className="w-full flex justify-center py-4">
+                            <div className="w-[200px] aspect-[3/4] font-traditional transform scale-90">
+                                <CardDisplay 
+                                    role={{
+                                        id: customRoleId || 'preview',
+                                        name: customRoleName || '預覽',
+                                        description: customRoleDesc || '描述文本...',
+                                        team: customRoleTeam,
+                                        isKeyRole: false,
+                                        winCondition: customRoleWin,
+                                        relatedRoleId: customRoleRelation,
+                                        bgImage: customRoleImg
+                                    }} 
+                                    team={customRoleTeam} 
+                                    isLeader={true}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1298,17 +1316,7 @@ export default function App() {
              const currentRoundIdx = (currentRoom.current_round || 1) - 1;
              const requiredCount = currentRoom.settings.exchange_counts[currentRoundIdx] || 1;
 
-             if (swapExecuted) {
-                 return (
-                    <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
-                        <CheckCircleIcon />
-                        <h2 className="text-2xl font-black text-white mt-4">交换已执行</h2>
-                        <p className="text-white/50 mt-2">等待上帝任命下一轮领袖...</p>
-                    </div>
-                 );
-             }
-
-             if (myReady) {
+             if (!swapExecuted && myReady) {
                  return (
                     <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
                         <div className="animate-spin text-4xl mb-4">⏳</div>
@@ -1318,39 +1326,42 @@ export default function App() {
                  );
              }
              
-             return (
-                <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
-                    <h2 className="text-2xl font-black text-white text-center mb-1 font-traditional">选择交换人质</h2>
-                    <p className="text-center text-white/50 mb-6 text-xs">需选择 {requiredCount} 人</p>
-                    
-                    <div className="flex-grow space-y-3 overflow-y-auto custom-scrollbar">
-                        {myRoomPlayers.map(p => {
-                            const isSelected = targetIds.includes(p.id);
-                            return (
-                                <button 
-                                    key={p.id}
-                                    onClick={() => handleLeaderExchangeSelect(p.id)}
-                                    className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                                >
-                                    <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
-                                    {isSelected && <CheckCircleIcon />}
-                                </button>
-                            );
-                        })}
+             // If Swap NOT executed AND Not Ready -> Show Selection UI
+             if (!swapExecuted) {
+                 return (
+                    <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
+                        <h2 className="text-2xl font-black text-white text-center mb-1 font-traditional">选择交换人质</h2>
+                        <p className="text-center text-white/50 mb-6 text-xs">需选择 {requiredCount} 人</p>
+                        
+                        <div className="flex-grow space-y-3 overflow-y-auto custom-scrollbar">
+                            {myRoomPlayers.map(p => {
+                                const isSelected = targetIds.includes(p.id);
+                                return (
+                                    <button 
+                                        key={p.id}
+                                        onClick={() => handleLeaderExchangeSelect(p.id)}
+                                        className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                    >
+                                        <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
+                                        {isSelected && <CheckCircleIcon />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                             <button 
+                                onClick={handleLeaderConfirmExchange}
+                                disabled={targetIds.length !== requiredCount}
+                                className="w-full bg-[#5abb2d] text-white py-4 rounded-xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                             >
+                                 确认交换 ({targetIds.length}/{requiredCount})
+                             </button>
+                             <p className="mt-2 text-center text-white/30 text-xs">需双方领袖都确认后才会执行</p>
+                        </div>
                     </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                         <button 
-                            onClick={handleLeaderConfirmExchange}
-                            disabled={targetIds.length !== requiredCount}
-                            className="w-full bg-[#5abb2d] text-white py-4 rounded-xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                         >
-                             确认交换 ({targetIds.length}/{requiredCount})
-                         </button>
-                         <p className="mt-2 text-center text-white/30 text-xs">需双方领袖都确认后才会执行</p>
-                    </div>
-                </div>
-             );
+                 );
+             }
         }
 
         return (
@@ -1423,8 +1434,8 @@ export default function App() {
         <BackgroundMusic isHome={view === 'HOME'} />
         
         {/* Alerts Overlay */}
-        {showExchangeAlert && <ExchangeAlert />}
         {showLeaderOverlay && <LeaderAppointmentOverlay />}
+        {showExchangeAlert && currentPlayer?.room_number && <ExchangeAlert targetRoom={currentPlayer.room_number} />}
 
         {/* Main Application Logic */}
         {renderContent()}
