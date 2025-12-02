@@ -266,14 +266,14 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 {/* Right Column: Dark - Name (1/3 width) */}
                 {/* UPDATED: Top Aligned, 8px margin using writing-mode */}
                 <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-2" style={{ backgroundColor: darkBg, color: 'white' }}>
-                    <div className="flex gap-1" style={{ writingMode: 'vertical-rl', textOrientation: 'sideways' }}>
-                        {/* Name (First -> Right) */}
-                        <span className="text-3xl font-black font-traditional tracking-widest text-left leading-none">
+                    <div className="flex flex-col gap-1 items-start leading-none select-none" style={{ writingMode: 'vertical-rl', textOrientation: 'sideways' }}>
+                        {/* Name (First -> Right in flex-col vertical-rl) */}
+                        <span className="text-3xl font-black font-traditional tracking-widest text-left">
                             {role.name}
                         </span>
-                         {/* Win Condition (Second -> Left) */}
+                         {/* Win Condition (Second -> Left in flex-col vertical-rl) */}
                          {role.winCondition && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left leading-none" style={{ color: lightBg }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
