@@ -187,14 +187,6 @@ export const BASE_ROLES: Role[] = [
     winCondition: '與炸彈客分享吧'
   },
   {
-    id: 'private_detective',
-    name: '私家偵探',
-    description: '灰队。你需要在游戏结束后猜出被埋葬的是哪一个身份，猜出获胜。',
-    team: Team.GREY,
-    isKeyRole: false,
-    winCondition: '誰是被埋葬的呢'
-  },
-  {
     id: 'angel_red',
     name: '天使',
     description: '红队。你只能说真话。',
@@ -302,7 +294,7 @@ export const BASE_ROLES: Role[] = [
     id: 'maid',
     name: '女僕',
     description: '灰队。你需要与总统和管家待在一起。',
-    team: Team.RED,
+    team: Team.GREY,
     isKeyRole: false,
     winCondition: '與管家和總統待在一起'
   },
@@ -369,6 +361,14 @@ export const BASE_ROLES: Role[] = [
     team: Team.GREY,
     isKeyRole: false,
     winCondition: '遠離炸彈客'
+  },
+  {
+    id: 'private_detective',
+    name: '私家偵探',
+    description: '灰队。你需要在游戏结束后猜出被埋葬的是哪一个身份，猜出获胜。',
+    team: Team.GREY,
+    isKeyRole: false,
+    winCondition: '誰是被埋葬的呢'
   },
   {
     id: 'gambler',
