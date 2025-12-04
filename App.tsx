@@ -16,8 +16,8 @@ const MegaphoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>;
 const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-pink-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>;
 const BrokenHeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 10-2 0v8h-1.586l-1.293-1.293a1 1 0 00-1.414 0l-1.293 1.293H5V5a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;
-const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>;
+const ChevronDownIcon = ({ className = "h-6 w-6" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
+const ChevronUpIcon = ({ className = "h-6 w-6" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>;
 
 const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
@@ -281,8 +281,16 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         />
                     )}
 
+                    {/* Toggle Button (Moved to Top Left) */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                        className="absolute top-2 left-2 z-30 p-1 hover:opacity-70 transition active:scale-95"
+                    >
+                        {isExpanded ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}
+                    </button>
+
                     {/* Content Container - Toggle Visibility */}
-                    <div className={`flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative transition-all duration-300 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+                    <div className={`flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative transition-all duration-300 pt-8 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
                         
                         {/* Capabilities Buttons */}
@@ -355,18 +363,10 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                             </div>
                         )}
                     </div>
-                    
-                    {/* Toggle Button */}
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                        className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-30 bg-black/20 hover:bg-black/30 p-1 rounded-full text-white/80 transition-all hover:scale-110 active:scale-95 backdrop-blur-sm"
-                    >
-                        {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                    </button>
 
-                    {/* Leader Label - Always Visible */}
+                    {/* Leader Label - Moved to Bottom Right */}
                     {isLeader && (
-                         <div className="absolute top-1 right-1 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-0.5 rounded shadow-sm z-20 font-traditional">
+                         <div className="absolute bottom-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-0.5 rounded shadow-sm z-20 font-traditional">
                              領袖
                          </div>
                     )}
