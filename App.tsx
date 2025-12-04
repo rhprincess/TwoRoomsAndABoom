@@ -82,42 +82,53 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [userHasInteracted, setUserHasInteracted] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const BG_MUSIC_URL = "https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/bgm/Two%20Rooms%20and%20a%20Boom.mp3"; // Sci-Fi / Suspense Ambient
+    // Reliable external music source (Sci-Fi Ambient)
+    const BG_MUSIC_URL = "https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/bgm/Two%20Rooms%20and%20a%20Boom.mp3"; 
 
     useEffect(() => {
-        // Attempt auto-play on mount
-        if (audioRef.current) {
-            audioRef.current.volume = 0.3; // Lower volume for background
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    setIsPlaying(true);
-                    setUserHasInteracted(true); // Auto-play success counts as interaction
-                }).catch(error => {
-                    console.log("Auto-play prevented. Waiting for user interaction.");
-                });
-            }
-        }
+        const audio = audioRef.current;
+        if (!audio) return;
 
-        // Global click listener to start audio if not playing (Browser Policy)
+        // Try to play immediately (might fail if no interaction)
+        const tryPlay = async () => {
+            try {
+                audio.volume = 0.3;
+                await audio.play();
+                setIsPlaying(true);
+                setUserHasInteracted(true);
+            } catch (err) {
+                console.log("Autoplay blocked, waiting for interaction");
+            }
+        };
+
+        tryPlay();
+
+        // One-time interaction listener to unlock audio context
         const handleInteraction = () => {
-            if (audioRef.current && !userHasInteracted) {
-                audioRef.current.play().then(() => {
+            if (audio && audio.paused) {
+                audio.play().then(() => {
                     setIsPlaying(true);
                     setUserHasInteracted(true);
-                }).catch(() => {});
+                }).catch(e => console.error("Play failed", e));
             }
+            // Once interacted, we don't need this global listener aggressively
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
         };
 
         if (!userHasInteracted) {
             window.addEventListener('click', handleInteraction);
+            window.addEventListener('touchstart', handleInteraction);
         }
 
-        return () => window.removeEventListener('click', handleInteraction);
-    }, [userHasInteracted]);
+        return () => {
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
+        };
+    }, []);
 
     const toggleMusic = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent bubbling so the global listener doesn't immediately re-play it
+        e.stopPropagation();
         if (audioRef.current) {
             if (isPlaying) {
                 audioRef.current.pause();
@@ -136,7 +147,7 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
 
     return (
         <>
-            <audio ref={audioRef} src={BG_MUSIC_URL} loop />
+            <audio ref={audioRef} src={BG_MUSIC_URL} loop preload="auto" />
             <button 
                 onClick={toggleMusic}
                 className={`fixed z-[200] transition-all duration-300 drop-shadow-lg active:scale-90 ${positionClass} ${isPlaying ? 'text-[#5abb2d]' : 'text-white/40'}`}
@@ -207,12 +218,30 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
     const effectiveTeam = fakeTeam || team;
     const isRed = effectiveTeam === Team.RED;
     const isBlue = effectiveTeam === Team.BLUE;
+    const isPurple = effectiveTeam === Team.PURPLE;
     
     // Theme Colors
-    const lightBg = isRed ? COLORS.RED_LIGHT : isBlue ? COLORS.BLUE_LIGHT : COLORS.GREY_LIGHT;
-    const darkBg = isRed ? COLORS.RED_DARK : isBlue ? COLORS.BLUE_DARK : COLORS.GREY_DARK;
-    const teamName = isRed ? '紅隊' : isBlue ? '藍隊' : '灰隊';
-    const Icon = isRed ? BombIcon : isBlue ? StarIcon : QuestionIcon;
+    let lightBg = COLORS.GREY_LIGHT;
+    let darkBg = COLORS.GREY_DARK;
+    let teamName = '灰隊';
+    let Icon = QuestionIcon;
+
+    if (isRed) {
+        lightBg = COLORS.RED_LIGHT;
+        darkBg = COLORS.RED_DARK;
+        teamName = '紅隊';
+        Icon = BombIcon;
+    } else if (isBlue) {
+        lightBg = COLORS.BLUE_LIGHT;
+        darkBg = COLORS.BLUE_DARK;
+        teamName = '藍隊';
+        Icon = StarIcon;
+    } else if (isPurple) {
+        lightBg = COLORS.PURPLE_LIGHT;
+        darkBg = COLORS.PURPLE_DARK;
+        teamName = '紫隊';
+        Icon = QuestionIcon; // Or any special icon for Purple
+    }
 
     if (!role) return null;
 
@@ -396,36 +425,50 @@ export default function App() {
   useEffect(() => {
       const storedSession = localStorage.getItem('twrb_session');
       if (storedSession && view === 'HOME') {
-          const { playerId, roomCode: code } = JSON.parse(storedSession);
-          if (playerId && code) {
-              setJoinLoading(true);
-              // Verify session exists
-               supabase.from('rooms').select('*').eq('code', code).single().then(({ data: room }) => {
-                   if (room) {
-                       supabase.from('players').select('*').eq('id', playerId).single().then(({ data: player }) => {
-                           if (player) {
-                               setCurrentRoom(room);
-                               setCurrentPlayer(player);
-                               setRoleMode(player.is_god ? 'GOD' : 'PLAYER');
-                               setRoomCode(code);
-                               setPlayerName(player.name);
-                               fetchPlayers(code);
-                               if (player.is_god) fetchCardSets();
-                               setView(player.is_god ? 'GAME' : 'LOBBY');
-                               // Auto-redirect if game started
-                               if (room.status !== GameStatus.LOBBY) {
-                                   setView('GAME');
+          try {
+              const { playerId, roomCode: code } = JSON.parse(storedSession);
+              if (playerId && code) {
+                  setJoinLoading(true);
+                  // Verify session exists
+                   supabase.from('rooms').select('*').eq('code', code).single().then(({ data: room }) => {
+                       if (room) {
+                           supabase.from('players').select('*').eq('id', playerId).single().then(({ data: player }) => {
+                               if (player) {
+                                   // Success - Restore State
+                                   setCurrentRoom(room);
+                                   setCurrentPlayer(player);
+                                   setRoleMode(player.is_god ? 'GOD' : 'PLAYER');
+                                   setRoomCode(code);
+                                   setPlayerName(player.name);
+                                   
+                                   // Fetch all players for dashboard/game
+                                   fetchPlayers(code);
+                                   
+                                   if (player.is_god) {
+                                       fetchCardSets();
+                                       setView('GAME');
+                                   } else {
+                                       // If game is started/paused, bypass lobby
+                                       if (room.status !== GameStatus.LOBBY) {
+                                            setView('GAME');
+                                       } else {
+                                            setView('LOBBY');
+                                       }
+                                   }
+                               } else {
+                                   localStorage.removeItem('twrb_session');
                                }
-                           } else {
-                               localStorage.removeItem('twrb_session');
-                           }
+                               setJoinLoading(false);
+                           });
+                       } else {
+                           localStorage.removeItem('twrb_session');
                            setJoinLoading(false);
-                       });
-                   } else {
-                       localStorage.removeItem('twrb_session');
-                       setJoinLoading(false);
-                   }
-               });
+                       }
+                   });
+              }
+          } catch(e) {
+              console.error("Session restore error", e);
+              localStorage.removeItem('twrb_session');
           }
       }
   }, []);
@@ -1162,7 +1205,7 @@ export default function App() {
                                             {isSelected && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded font-black">交换</span>}
                                         </span>
                                         {p.role && (
-                                            <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-[#de0029] text-white' : p.team === Team.BLUE ? 'bg-[#82a0d2] text-[#4c4595]' : 'bg-[#9b9794] text-[#656362]'}`}>
+                                            <span className={`text-[10px] px-1.5 rounded font-bold uppercase ${p.team === Team.RED ? 'bg-[#de0029] text-white' : p.team === Team.BLUE ? 'bg-[#82a0d2] text-[#4c4595]' : p.team === Team.PURPLE ? 'bg-purple-600 text-white' : 'bg-[#9b9794] text-[#656362]'}`}>
                                                 {p.role.name}
                                             </span>
                                         )}
@@ -1218,6 +1261,7 @@ export default function App() {
             switch(team) {
                 case Team.BLUE: return 'bg-[#82a0d2]/20 border-[#82a0d2] text-[#82a0d2]';
                 case Team.RED: return 'bg-[#de0029]/20 border-[#de0029] text-[#ff8fa3]';
+                case Team.PURPLE: return 'bg-purple-500/20 border-purple-500 text-purple-300';
                 default: return 'bg-white/10 border-white/20 text-white/70';
             }
         };
@@ -1245,7 +1289,30 @@ export default function App() {
                 </header>
 
                 {currentRoom?.status === GameStatus.LOBBY ? (
+
                     <div className="flex-grow p-4 overflow-y-auto pb-24 space-y-6">
+
+                        {/* Game Configuration */}
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                <span className="text-sm font-bold">游戏设置</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label className="block text-white/50 mb-1">回合数</label>
+                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
+                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
+                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                            </div>
+                        </div>
+
                          {/* Card Set Management */}
                          <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
@@ -1265,52 +1332,13 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Custom Role Builder */}
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-full sm:w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
-                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-full sm:w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
-                                    <option value={Team.BLUE}>蓝队</option>
-                                    <option value={Team.RED}>红队</option>
-                                    <option value={Team.GREY}>灰队</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            </div>
-                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (SVG/PNG/JPG)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            
-                            <button 
-                                onClick={() => {
-                                    if(!customRoleName) return;
-                                    const newRole = { 
-                                        id: customRoleId || `custom_${Date.now()}`, 
-                                        name: customRoleName, 
-                                        description: customRoleDesc, 
-                                        team: customRoleTeam, 
-                                        isKeyRole: false, 
-                                        isCustom: true, 
-                                        winCondition: customRoleWin,
-                                        relatedRoleId: customRoleRelation || undefined,
-                                        bgImage: customRoleImg || undefined
-                                    };
-                                    updateRoles([...currentRoom.custom_roles, newRole]);
-                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
-                                }}
-                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
-                            >添加至卡组</button>
-                        </div>
 
                         {/* Current Deck */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                             <h3 className="text-sm font-bold opacity-50 mb-3">当前卡组 ({currentRoom.custom_roles.length})</h3>
                             <div className="flex flex-wrap gap-2">
                                 {currentRoom.custom_roles.map((r, i) => (
-                                    <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : 'bg-white/10 border-white/20'}`}>
+                                    <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : r.team === Team.PURPLE ? 'bg-purple-500/20 border-purple-500' : 'bg-white/10 border-white/20'}`}>
                                         <span className="opacity-50 text-[9px] mr-1">[{r.id}]</span>
                                         {r.name}
                                         {(!r.isKeyRole || testMode) && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
@@ -1368,25 +1396,45 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Game Configuration */}
+                       {/* Custom Role Builder */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
-                                <span className="text-sm font-bold">游戏设置</span>
+                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-full sm:w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
+                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-full sm:w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
+                                    <option value={Team.BLUE}>蓝队</option>
+                                    <option value={Team.RED}>红队</option>
+                                    <option value={Team.GREY}>灰队</option>
+                                    <option value={Team.PURPLE}>紫队</option>
+                                </select>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                    <label className="block text-white/50 mb-1">回合数</label>
-                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
-                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
-                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
                             </div>
+                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (SVG/PNG/JPG)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            
+                            <button 
+                                onClick={() => {
+                                    if(!customRoleName) return;
+                                    const newRole = { 
+                                        id: customRoleId || `custom_${Date.now()}`, 
+                                        name: customRoleName, 
+                                        description: customRoleDesc, 
+                                        team: customRoleTeam, 
+                                        isKeyRole: false, 
+                                        isCustom: true, 
+                                        winCondition: customRoleWin,
+                                        relatedRoleId: customRoleRelation || undefined,
+                                        bgImage: customRoleImg || undefined
+                                    };
+                                    updateRoles([...currentRoom.custom_roles, newRole]);
+                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
+                                }}
+                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
+                            >添加至卡组</button>
                         </div>
 
                     </div>
@@ -1567,15 +1615,7 @@ export default function App() {
                 {/* Top Info */}
                 <div className="p-4 flex justify-between items-center z-10 bg-[#2d285e]/80 backdrop-blur border-b border-white/10">
                     <div className="flex items-center gap-3">
-                        {/* Avatar hidden if Drunkard capability is active (fakeTeam present, or just hide to allow confusion?) */}
-                        {/* Requirement: Remove avatar for Color Change role */}
-                        {!currentPlayer.role.capabilities?.canChangeColor ? (
-                            <div className={`p-2 rounded-full ${currentPlayer.team === Team.RED ? 'bg-[#de0029]' : currentPlayer.team === Team.BLUE ? 'bg-[#82a0d2]' : 'bg-[#9b9794]'}`}>
-                                <UserIcon />
-                            </div>
-                        ) : (
-                            <div className="p-2 rounded-full bg-purple-500 text-white">?</div>
-                        )}
+                        {/* Requirement: Avatar Removed */}
                         <div>
                             <div className="font-bold text-white leading-none">{currentPlayer.name}</div>
                             <div className="text-xs text-white/60">房间 {currentPlayer.room_number || '?'}</div>
