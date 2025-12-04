@@ -6,7 +6,6 @@ import { BASE_ROLES, DEFAULT_ROUND_LENGTHS, COLORS } from './constants';
 import { BombExplosion, MockeryEffect } from './components/VisualEffects';
 
 // --- Icons ---
-const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>;
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>;
 const CrownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 111.772.954l-2.463 4.621 1.991.995a1 1 0 11-.894 1.79l-1.233-.616 1.733 5.426a1 1 0 01-1.429 1.285l-4.59.816-1.554-4.867 1.233.617a1 1 0 01.894-1.79l-1.991-.995-2.463-4.621a1 1 0 111.772-.954l1.699 3.181L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552a1 1 0 01-1.285.592l-1.636-.596a1 1 0 11.697-1.874l1.248.455.795-2.486a1 1 0 111.9.957zM15 10.274l.818 2.552a1 1 0 001.285.592l1.636-.596a1 1 0 00-.697-1.874l-1.248.455-.795-2.486a1 1 0 00-1.9.957z" clipRule="evenodd" /></svg>;
@@ -17,11 +16,14 @@ const MegaphoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>;
 const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-pink-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>;
 const BrokenHeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 10-2 0v8h-1.586l-1.293-1.293a1 1 0 00-1.414 0l-1.293 1.293H5V5a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>;
 
 const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
 const QuestionIcon = () => <span className="text-2xl">?</span>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
+const SpinnerIcon = () => <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
 
 // --- Components ---
 
@@ -97,7 +99,7 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
     const [userHasInteracted, setUserHasInteracted] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     // Reliable external music source (Sci-Fi Ambient)
-    const BG_MUSIC_URL = "https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/bgm/Two%20Rooms%20and%20a%20Boom.mp3"; 
+    const BG_MUSIC_URL = "https://pixabay.com/music/ambient-sci-fi-ambient-13184/"; 
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -161,7 +163,7 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
 
     return (
         <>
-            <audio ref={audioRef} src={BG_MUSIC_URL} loop preload="auto" />
+            <audio ref={audioRef} src="https://cdn.pixabay.com/audio/2021/09/06/audio_95941913f0.mp3" loop preload="auto" />
             <button 
                 onClick={toggleMusic}
                 className={`fixed z-[200] transition-all duration-300 drop-shadow-lg active:scale-90 ${positionClass} ${isPlaying ? 'text-[#5abb2d]' : 'text-white/40'}`}
@@ -227,6 +229,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
     fakeTeam?: Team
 }) => {
     const [inputCode, setInputCode] = useState('');
+    const [isExpanded, setIsExpanded] = useState(false);
     
     // Determine visuals based on fakeTeam if present (Drunkard capability)
     const effectiveTeam = fakeTeam || team;
@@ -267,19 +270,19 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
             {/* Top Section (3/4 height) */}
             <div className="flex flex-row h-[75%] relative">
                 {/* Left Column: Light - Description (2/3 width) */}
-                <div className={`w-2/3 p-4 flex flex-col relative overflow-hidden ${isLeader ? 'border-4 border-yellow-200' : ''}`} style={{ backgroundColor: lightBg, color: darkBg }}>
+                <div className={`w-2/3 p-4 flex flex-col relative overflow-hidden transition-all duration-300 ${isLeader ? 'border-4 border-yellow-200' : ''}`} style={{ backgroundColor: lightBg, color: darkBg }}>
                     
                     {/* Background Image (Optional) */}
                     {role.bgImage && (
                         <img 
                             src={role.bgImage} 
                             alt="Background" 
-                            className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none mix-blend-multiply" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none mix-blend-multiply transition-opacity duration-300" 
                         />
                     )}
 
-                    {/* Description */}
-                    <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative">
+                    {/* Content Container - Toggle Visibility */}
+                    <div className={`flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative transition-all duration-300 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
                         
                         {/* Capabilities Buttons */}
@@ -352,9 +355,18 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                             </div>
                         )}
                     </div>
-                    {/* Leader Label */}
+                    
+                    {/* Toggle Button */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                        className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-30 bg-black/20 hover:bg-black/30 p-1 rounded-full text-white/80 transition-all hover:scale-110 active:scale-95 backdrop-blur-sm"
+                    >
+                        {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                    </button>
+
+                    {/* Leader Label - Always Visible */}
                     {isLeader && (
-                         <div className="absolute bottom-1 right-1 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-0.5 rounded shadow-sm z-20 font-traditional">
+                         <div className="absolute top-1 right-1 bg-yellow-400 text-yellow-900 text-xs font-black px-2 py-0.5 rounded shadow-sm z-20 font-traditional">
                              領袖
                          </div>
                     )}
@@ -416,12 +428,12 @@ export default function App() {
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [isDistributing, setIsDistributing] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   // New Mechanic States
-  const [showFindModal, setShowFindModal] = useState(false);
   const [showDesignateModal, setShowDesignateModal] = useState(false);
   const [designateSelection, setDesignateSelection] = useState<string[]>([]); // Array of 2 player IDs
-  const [findSelection, setFindSelection] = useState<string>('');
+  // REMOVED: showFindModal, findSelection
 
   // Game Config States
   const [configRounds, setConfigRounds] = useState(3);
@@ -874,18 +886,31 @@ export default function App() {
   };
 
   const handleFindTarget = async () => {
-      if (!currentPlayer || !findSelection) return;
-      const target = players.find(p => p.id === findSelection);
+      if (!currentPlayer) return;
+      if (!window.confirm("确定要执行【找寻】操作吗？这将标记你已找到目标。")) return;
+
       const allowedTargets = currentPlayer.role?.capabilities?.canFind || [];
+      if (allowedTargets.length === 0) return;
+
+      // Priority Search: Find the first matching target present in the game
+      let targetPlayer: Player | undefined;
       
-      if (target && target.role && allowedTargets.includes(target.role.id)) {
-          // Success
-          await supabase.from('players').update({ condition_met: true }).eq('id', currentPlayer.id);
-          await supabase.from('players').update({ is_found: true }).eq('id', target.id);
-          alert("找寻成功！");
-          setShowFindModal(false);
+      for (const targetRoleId of allowedTargets) {
+          targetPlayer = players.find(p => p.role?.id === targetRoleId && !p.is_god);
+          if (targetPlayer) {
+              break; 
+          }
+      }
+
+      // Mark self as condition met
+      await supabase.from('players').update({ condition_met: true }).eq('id', currentPlayer.id);
+
+      if (targetPlayer) {
+          // Update Target
+          await supabase.from('players').update({ is_found: true }).eq('id', targetPlayer.id);
+          alert(`找寻成功！已标记目标。`);
       } else {
-          alert("目标错误或不是你要找的人。");
+          alert("找寻状态已更新 (未发现对应目标玩家)");
       }
   };
 
@@ -927,15 +952,22 @@ export default function App() {
   };
 
   const startGameTimer = async () => {
-      if (!currentRoom) return;
-      const endTime = new Date(Date.now() + currentRoom.settings.round_lengths[0] * 1000);
-      await supabase.from('rooms').update({
-        status: GameStatus.PLAYING,
-        current_round: 1,
-        round_end_time: endTime.toISOString(),
-        pending_exchanges: {},
-        exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
-      }).eq('code', currentRoom.code);
+      if (!currentRoom || isStarting) return;
+      setIsStarting(true);
+      try {
+          const endTime = new Date(Date.now() + currentRoom.settings.round_lengths[0] * 1000);
+          await supabase.from('rooms').update({
+            status: GameStatus.PLAYING,
+            current_round: 1,
+            round_end_time: endTime.toISOString(),
+            pending_exchanges: {},
+            exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
+          }).eq('code', currentRoom.code);
+      } catch (err) {
+          console.error("Start Game Error:", err);
+      } finally {
+          setIsStarting(false);
+      }
   };
 
   const pauseRound = async () => {
@@ -1519,8 +1551,16 @@ export default function App() {
                         </div>
                     )}
                     {currentRoom?.status === GameStatus.READY_TO_START && (
-                        <button onClick={startGameTimer} className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold shadow-lg text-lg animate-pulse">
-                            开始游戏 (启动倒计时)
+                        <button 
+                            onClick={startGameTimer} 
+                            disabled={isStarting}
+                            className={`w-full bg-yellow-500 text-black py-3 rounded-xl font-bold shadow-lg text-lg flex items-center justify-center gap-2 ${isStarting ? 'opacity-80 cursor-not-allowed' : 'animate-pulse'}`}
+                        >
+                             {isStarting ? (
+                                 <><SpinnerIcon /> 启动中...</>
+                             ) : (
+                                 '开始游戏 (启动倒计时)'
+                             )}
                         </button>
                     )}
                     {currentRoom?.status === GameStatus.PLAYING && (
@@ -1548,31 +1588,6 @@ export default function App() {
 
     // 8. PLAYER GAME
     if (currentPlayer?.role) {
-        // Find Modal
-        if (showFindModal) {
-            const targets = players.filter(p => !p.is_god && p.id !== currentPlayer.id);
-            return (
-                <div className="fixed inset-0 z-50 bg-[#2d285e] flex flex-col p-6">
-                    <h2 className="text-2xl font-black text-white text-center mb-6">找寻目标</h2>
-                    <div className="flex-grow overflow-y-auto space-y-2 custom-scrollbar">
-                        {targets.map(p => (
-                            <button
-                                key={p.id}
-                                onClick={() => setFindSelection(p.id)}
-                                className={`w-full p-4 rounded-xl flex justify-between items-center transition ${findSelection === p.id ? 'bg-blue-600 text-white' : 'bg-white/10 text-white'}`}
-                            >
-                                {p.name}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="mt-4 flex gap-4">
-                        <button onClick={() => setShowFindModal(false)} className="flex-1 bg-white/20 py-3 rounded-xl font-bold">取消</button>
-                        <button onClick={handleFindTarget} disabled={!findSelection} className="flex-1 bg-blue-600 py-3 rounded-xl font-bold disabled:opacity-50">确认</button>
-                    </div>
-                </div>
-            );
-        }
-
         // Designate Modal (Cupid/Eris)
         if (showDesignateModal) {
              const targets = players.filter(p => !p.is_god && p.id !== currentPlayer.id);
@@ -1702,7 +1717,7 @@ export default function App() {
                                 isLeader={currentPlayer.is_leader}
                                 isShared={currentPlayer.is_shared}
                                 onShare={handleShareCard}
-                                onFind={() => setShowFindModal(true)}
+                                onFind={handleFindTarget}
                                 onColorChange={handleColorChange}
                                 fakeTeam={currentPlayer.fake_team}
                             />
