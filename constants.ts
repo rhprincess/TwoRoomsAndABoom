@@ -8,7 +8,7 @@ export const COLORS = {
   
   // Blue Team
   BLUE_LIGHT: '#82a0d2',
-  BLUE_DARK: '#2562c6',
+  BLUE_DARK: '#4c4595',
   
   // Red Team
   RED_LIGHT: '#ff8fa3',
@@ -17,6 +17,10 @@ export const COLORS = {
   // Grey Team
   GREY_LIGHT: '#d1d1d1',
   GREY_DARK: '#4a4a4a',
+
+  // Purple Team
+  PURPLE_LIGHT: '#7a519f',
+  PURPLE_DARK: '#461475'
 };
 
 export const DEFAULT_ROUND_LENGTHS = [300, 180, 60]; // 5m, 3m, 1m in seconds
@@ -60,7 +64,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你是总统的亲信。你需要找到总统来建立信任，游戏结束未建立信任将导致你们队伍失败。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '必須找到總統'
+    winCondition: '必須找到總統',
+    capabilities: { canFind: ['president', 'daughter_of_president'] }
   },
   {
     id: 'engineer',
@@ -68,7 +73,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队工程师。你是炸弹客的工程专家。你需要找到炸弹客来建立信任，游戏结束未建立信任将导致你们队伍失败。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '必須找到炸彈客'
+    winCondition: '必須找到炸彈客',
+    capabilities: { canFind: ['bomber', 'bomb_descendent'] }
   },
   {
     id: 'red_spy',
@@ -112,7 +118,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你需要分享你的卡牌，尽可能为队伍获取到更多信息。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '你只能分享卡牌'
+    winCondition: '你只能分享卡牌',
+    capabilities: { canShare: true }
   },
     {
     id: 'negotiator_blue',
@@ -120,7 +127,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你需要分享你的卡牌，尽可能为队伍获取到更多信息。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '你只能分享卡牌'
+    winCondition: '你只能分享卡牌',
+    capabilities: { canShare: true }
   },
   {
     id: 'shyshy_red',
@@ -128,7 +136,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你只能分享你的卡牌颜色，迷惑对方。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '過於靦腆只能分享顏色'
+    winCondition: '過於靦腆只能分享顏色',
+    capabilities: { canShare: true }
   },
   {
     id: 'shyshy_blue',
@@ -136,7 +145,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你只能分享你的卡牌颜色，迷惑对方。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '過於靦腆只能分享顏色'
+    winCondition: '過於靦腆只能分享顏色',
+    capabilities: { canShare: true }
   },
   {
     id: 'bomb_descendent',
@@ -160,7 +170,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你是工程师的替补，如果你的队伍没有工程师，你需要继承TA的身份。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '如果沒有工程師…你就是工程師'
+    winCondition: '如果沒有工程師…你就是工程師',
+    capabilities: { canFind: ['bomber', 'bomb_descendent'] }
   },
   {
     id: 'nurse',
@@ -168,7 +179,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你是医生的好搭手，如果你的队伍没有医生，你需要继承TA的身份救死扶伤。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '如果沒有醫生…你就是醫生'
+    winCondition: '如果沒有醫生…你就是醫生',
+    capabilities: { canFind: ['president', 'daughter_of_president'] }
   },
   {
     id: 'pengpeng_doctor',
@@ -176,7 +188,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。当你与蓝队的总统互相分享卡牌时，炸弹客的炸弹立即爆炸，游戏结束。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '與總統分享吧'
+    winCondition: '與總統分享吧',
+    capabilities: { canShare: true }
   },
   {
     id: 'knight_of_tuesday',
@@ -184,7 +197,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。当你与红队的炸弹客互相分享卡牌时，你成功刺杀炸弹客保护了总统，游戏结束。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '與炸彈客分享吧'
+    winCondition: '與炸彈客分享吧',
+    capabilities: { canShare: true }
   },
   {
     id: 'angel_red',
@@ -240,7 +254,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。一旦你的卡牌被分享，则你被传染禁言，永远不能说话。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '避免分享傳染！'
+    winCondition: '避免分享傳染！',
+    capabilities: { canShare: true }
   },
   {
     id: 'mummy_blue',
@@ -248,7 +263,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。一旦你的卡牌被分享，则你被传染禁言，永远不能说话。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '避免分享傳染！'
+    winCondition: '避免分享傳染！',
+    capabilities: { canShare: true }
   },
   {
     id: 'cupid',
@@ -256,7 +272,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。可以指定当前游戏内任意两个人相爱，被指定相爱的人，游戏结束前必须在同一个房间',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '整局隻能用一次，指定兩名玩家相愛'
+    winCondition: '整局隻能用一次，指定兩名玩家相愛',
+    capabilities: { designateCapability: 'LOVE' }
   },
   {
     id: 'eris',
@@ -264,7 +281,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。可以指定当前游戏内任意两个人相恨，被指定相恨的人，游戏结束前必须不在同一个房间',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '整局隻能用一次，指定兩名玩家相恨'
+    winCondition: '整局隻能用一次，指定兩名玩家相恨',
+    capabilities: { designateCapability: 'HATE' }
   },
   {
     id: 'ahah',
@@ -378,4 +396,13 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     winCondition: '猜對獲勝隊伍'
   },
+  {
+    id: 'drunkard',
+    name: '酒鬼',
+    description: '紫队。你喝的太醉了，你是游戏的搅局者，你可以变换你的颜色来迷惑其他玩家。',
+    team: Team.PURPLE,
+    isKeyRole: false,
+    winCondition: '攪局者出動',
+    capabilities: { canChangeColor: true }
+  }
 ];

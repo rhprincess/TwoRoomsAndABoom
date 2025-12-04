@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role, CardSet } from './types';
@@ -12,6 +13,10 @@ const CrownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w
 const LinkIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" /></svg>;
 const MusicOnIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
 const MusicOffIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
+const MegaphoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd" /></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>;
+const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-pink-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>;
+const BrokenHeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 10-2 0v8h-1.586l-1.293-1.293a1 1 0 00-1.414 0l-1.293 1.293H5V5a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;
 
 const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
@@ -95,7 +100,6 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
         }
 
         // Global click listener to start audio if not playing (Browser Policy)
-        // Only run this if we haven't successfully started audio yet.
         const handleInteraction = () => {
             if (audioRef.current && !userHasInteracted) {
                 audioRef.current.play().then(() => {
@@ -184,10 +188,25 @@ const TimerDisplay = ({ timeLeft }: { timeLeft: number }) => (
     </div>
 );
 
-const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isLeader }: { role: Role | null, team: Team, verificationCode?: string, onVerify?: (code: string) => void, conditionMet?: boolean, isLeader?: boolean }) => {
+const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isLeader, isShared, onShare, onFind, onColorChange, fakeTeam }: { 
+    role: Role | null, 
+    team: Team, 
+    verificationCode?: string, 
+    onVerify?: (code: string) => void, 
+    conditionMet?: boolean, 
+    isLeader?: boolean,
+    isShared?: boolean,
+    onShare?: () => void,
+    onFind?: () => void,
+    onColorChange?: () => void,
+    fakeTeam?: Team
+}) => {
     const [inputCode, setInputCode] = useState('');
-    const isRed = team === Team.RED;
-    const isBlue = team === Team.BLUE;
+    
+    // Determine visuals based on fakeTeam if present (Drunkard capability)
+    const effectiveTeam = fakeTeam || team;
+    const isRed = effectiveTeam === Team.RED;
+    const isBlue = effectiveTeam === Team.BLUE;
     
     // Theme Colors
     const lightBg = isRed ? COLORS.RED_LIGHT : isBlue ? COLORS.BLUE_LIGHT : COLORS.GREY_LIGHT;
@@ -220,6 +239,41 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                     <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative">
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
                         
+                        {/* Capabilities Buttons */}
+                        <div className="mt-4 space-y-2">
+                             {/* Share Capability */}
+                             {role.capabilities?.canShare && onShare && (
+                                 <button 
+                                    onClick={onShare}
+                                    disabled={isShared}
+                                    className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 shadow-md ${isShared ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:scale-105 active:scale-95'}`}
+                                 >
+                                     <MegaphoneIcon /> {isShared ? '已分享' : '分享卡牌'}
+                                 </button>
+                             )}
+
+                             {/* Find Capability */}
+                             {role.capabilities?.canFind && onFind && (
+                                 <button 
+                                    onClick={onFind}
+                                    disabled={conditionMet}
+                                    className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 shadow-md ${conditionMet ? 'bg-green-600 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:scale-105 active:scale-95'}`}
+                                 >
+                                     <SearchIcon /> {conditionMet ? '已找寻' : '找寻目标'}
+                                 </button>
+                             )}
+                             
+                             {/* Color Change Capability */}
+                             {role.capabilities?.canChangeColor && onColorChange && (
+                                 <button 
+                                    onClick={onColorChange}
+                                    className="w-full py-2 rounded font-bold text-xs bg-purple-600 text-white hover:scale-105 active:scale-95 shadow-md"
+                                 >
+                                     变换颜色
+                                 </button>
+                             )}
+                        </div>
+
                         {/* Verification Section */}
                         {role.relatedRoleId && onVerify && (
                             <div className="mt-4 pt-2 border-t border-black/10">
@@ -264,7 +318,6 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                 </div>
 
                 {/* Right Column: Dark - Name (1/3 width) */}
-                {/* UPDATED: Top Aligned, 8px margin using writing-mode */}
                 <div className="w-1/3 h-full relative border-l-2 border-black/10 flex justify-center pt-2" style={{ backgroundColor: darkBg, color: 'white' }}>
                     <div className="flex flex-col gap-1 items-start leading-none select-none" style={{ writingMode: 'vertical-rl', textOrientation: 'sideways' }}>
                         {/* Name (First -> Right in flex-col vertical-rl) */}
@@ -320,6 +373,12 @@ export default function App() {
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
 
+  // New Mechanic States
+  const [showFindModal, setShowFindModal] = useState(false);
+  const [showDesignateModal, setShowDesignateModal] = useState(false);
+  const [designateSelection, setDesignateSelection] = useState<string[]>([]); // Array of 2 player IDs
+  const [findSelection, setFindSelection] = useState<string>('');
+
   // Game Config States
   const [configRounds, setConfigRounds] = useState(3);
   const [configRoundLengths, setConfigRoundLengths] = useState('5,3,1');
@@ -333,6 +392,44 @@ export default function App() {
   const prevRoomRef = useRef<number | null>(null);
   const prevIsLeader = useRef<boolean>(false);
 
+  // --- Session Restore ---
+  useEffect(() => {
+      const storedSession = localStorage.getItem('twrb_session');
+      if (storedSession && view === 'HOME') {
+          const { playerId, roomCode: code } = JSON.parse(storedSession);
+          if (playerId && code) {
+              setJoinLoading(true);
+              // Verify session exists
+               supabase.from('rooms').select('*').eq('code', code).single().then(({ data: room }) => {
+                   if (room) {
+                       supabase.from('players').select('*').eq('id', playerId).single().then(({ data: player }) => {
+                           if (player) {
+                               setCurrentRoom(room);
+                               setCurrentPlayer(player);
+                               setRoleMode(player.is_god ? 'GOD' : 'PLAYER');
+                               setRoomCode(code);
+                               setPlayerName(player.name);
+                               fetchPlayers(code);
+                               if (player.is_god) fetchCardSets();
+                               setView(player.is_god ? 'GAME' : 'LOBBY');
+                               // Auto-redirect if game started
+                               if (room.status !== GameStatus.LOBBY) {
+                                   setView('GAME');
+                               }
+                           } else {
+                               localStorage.removeItem('twrb_session');
+                           }
+                           setJoinLoading(false);
+                       });
+                   } else {
+                       localStorage.removeItem('twrb_session');
+                       setJoinLoading(false);
+                   }
+               });
+          }
+      }
+  }, []);
+
   // --- Realtime ---
   useEffect(() => {
     if (!currentRoom) return;
@@ -343,6 +440,7 @@ export default function App() {
         // Handle Game Closure (Delete)
         if (payload.eventType === 'DELETE') {
             alert('房间已关闭，正在返回主页...');
+            localStorage.removeItem('twrb_session');
             window.location.reload();
             return;
         }
@@ -388,10 +486,6 @@ export default function App() {
       const isPaused = currentRoom?.status === GameStatus.PAUSED;
       const swapExecuted = currentRoom?.exchange_status?.swap_executed;
 
-      // Only trigger if:
-      // 1. I became leader just now (Previous was false, Now is true)
-      // 2. We are in the PAUSED phase
-      // 3. The swap has happened (God is appointing for next round)
       if (isLeader && !prevIsLeader.current && isPaused && swapExecuted) {
           setShowLeaderOverlay(true);
           const timer = setTimeout(() => {
@@ -400,9 +494,17 @@ export default function App() {
           return () => clearTimeout(timer);
       }
 
-      // Update ref for next render
       prevIsLeader.current = isLeader;
   }, [currentPlayer?.is_leader, currentRoom?.status, currentRoom?.exchange_status?.swap_executed]);
+
+  // --- Designate (Cupid/Eris) Modal Logic ---
+  useEffect(() => {
+      if (currentRoom?.status === GameStatus.PLAYING && currentRoom.current_round === 1 && currentPlayer?.role?.capabilities?.designateCapability && !currentPlayer.action_performed) {
+          setShowDesignateModal(true);
+      } else {
+          setShowDesignateModal(false);
+      }
+  }, [currentRoom?.status, currentRoom?.current_round, currentPlayer?.role, currentPlayer?.action_performed]);
 
   // --- God Mode: Watcher for Synchronized Exchange ---
   useEffect(() => {
@@ -414,8 +516,6 @@ export default function App() {
           const executed = currentRoom.exchange_status?.swap_executed;
 
           if (r1Ready && r2Ready && !executed) {
-              console.log("Both rooms ready, executing swap...");
-              
               const r1TargetIds = currentRoom.pending_exchanges?.room1_target_ids || [];
               const r2TargetIds = currentRoom.pending_exchanges?.room2_target_ids || [];
 
@@ -427,20 +527,19 @@ export default function App() {
                   await supabase.from('players').update({ room_number: 1 }).eq('id', id);
               }
 
-              // IMPORTANT: Reset Leaders for EVERYONE to force re-appointment
-              // (Unless it's the final round where no leader is needed, but clearing is safer)
+              // Reset Leaders
               await supabase.from('players').update({ is_leader: false }).eq('room_code', currentRoom.code);
 
               // Update Room Status
               const nextStatus = { ...currentRoom.exchange_status, swap_executed: true };
               await supabase.from('rooms').update({ 
                   exchange_status: nextStatus,
-                  pending_exchanges: {} // Clear pending
+                  pending_exchanges: {} 
               }).eq('code', currentRoom.code);
           }
       };
 
-      const timeout = setTimeout(performBatchSwap, 500); // Debounce
+      const timeout = setTimeout(performBatchSwap, 500); 
       return () => clearTimeout(timeout);
   }, [currentRoom, currentPlayer?.is_god]);
 
@@ -535,6 +634,9 @@ export default function App() {
       const { error: joinError } = await supabase.from('players').insert(newPlayer);
       if (joinError) throw joinError;
 
+      // Save session
+      localStorage.setItem('twrb_session', JSON.stringify({ playerId: newPlayer.id, roomCode: roomCode }));
+
       setCurrentRoom(roomData);
       setCurrentPlayer(newPlayer as Player);
       await fetchPlayers(roomCode);
@@ -584,10 +686,7 @@ export default function App() {
               alert(`人数不足，至少 ${currentRoom.settings.min_players} 人`);
               return;
           }
-          if (playerCount % 2 !== 0) {
-              alert("人数必须为双数");
-              return;
-          }
+          // Removed even number restriction as requested
       } else {
           if (playerCount === 0) {
               alert("没有玩家");
@@ -599,7 +698,6 @@ export default function App() {
       const lengths = configRoundLengths.split(',').map(s => parseInt(s.trim()) * 60);
       const exchanges = configExchangeCounts.split(',').map(s => parseInt(s.trim()));
       
-      // Update settings
       const newSettings = {
           ...currentRoom.settings,
           rounds: configRounds,
@@ -607,18 +705,16 @@ export default function App() {
           exchange_counts: exchanges
       };
 
-      // Logic
       const deck = [...currentRoom.custom_roles];
-      // Logic: Ensure we have enough cards
       if (deck.length > playerCount) {
           alert("卡牌数量多于玩家数量");
           return;
       }
       
-      // Fill
       const remaining = playerCount - deck.length;
       const blueFill = BASE_ROLES.find(r => r.id === 'blue_team')!;
       const redFill = BASE_ROLES.find(r => r.id === 'red_team')!;
+      // Simple fill logic, roughly balanced
       for(let i=0; i<Math.ceil(remaining/2); i++) deck.push(blueFill);
       for(let i=0; i<Math.floor(remaining/2); i++) deck.push(redFill);
       
@@ -626,11 +722,9 @@ export default function App() {
       const shuffledPlayers = [...playingPlayers].sort(() => Math.random() - 0.5);
       const half = Math.ceil(playerCount / 2);
 
-      // Distribute with Verification Codes
       for (let i = 0; i < playerCount; i++) {
         const role = shuffledDeck[i];
         let vCode = undefined;
-        // Generate verification code if role has a relation
         if (role.relatedRoleId) {
             vCode = Math.floor(100000 + Math.random() * 900000).toString();
         }
@@ -642,12 +736,16 @@ export default function App() {
             team: role.team, 
             condition_met: false,
             room_number: roomNum,
-            is_leader: false, // Reset leader, set later
-            verification_code: vCode
+            is_leader: false,
+            verification_code: vCode,
+            is_shared: false,
+            is_found: false,
+            action_performed: false,
+            fake_team: null,
+            status_effects: {}
         }).eq('id', shuffledPlayers[i].id);
       }
       
-      // Assign Initial Leaders (Random for Round 1)
       const room1Players = shuffledPlayers.slice(0, half);
       const room2Players = shuffledPlayers.slice(half);
 
@@ -660,7 +758,7 @@ export default function App() {
       await supabase.from('rooms').update({
           status: GameStatus.DISTRIBUTING,
           current_round: 0,
-          settings: newSettings, // Apply Config
+          settings: newSettings,
           pending_exchanges: {}, 
           exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
       }).eq('code', currentRoom.code);
@@ -669,6 +767,8 @@ export default function App() {
           await supabase.from('rooms').update({ status: GameStatus.READY_TO_START }).eq('code', currentRoom.code);
       }, 3500);
   };
+
+  // --- Mechanic Handlers ---
 
   const handleVerifyRole = async (code: string) => {
       if (!currentPlayer || !currentPlayer.role?.relatedRoleId) return;
@@ -681,6 +781,64 @@ export default function App() {
       } else {
           alert("核对码错误或不是目标角色。");
       }
+  };
+
+  const handleShareCard = async () => {
+      if (!currentPlayer) return;
+      await supabase.from('players').update({ is_shared: true }).eq('id', currentPlayer.id);
+  };
+
+  const handleFindTarget = async () => {
+      if (!currentPlayer || !findSelection) return;
+      const target = players.find(p => p.id === findSelection);
+      const allowedTargets = currentPlayer.role?.capabilities?.canFind || [];
+      
+      if (target && target.role && allowedTargets.includes(target.role.id)) {
+          // Success
+          await supabase.from('players').update({ condition_met: true }).eq('id', currentPlayer.id);
+          await supabase.from('players').update({ is_found: true }).eq('id', target.id);
+          alert("找寻成功！");
+          setShowFindModal(false);
+      } else {
+          alert("目标错误或不是你要找的人。");
+      }
+  };
+
+  const handleColorChange = async () => {
+      if (!currentPlayer) return;
+      // Toggle Fake Team for local display/logic
+      const newTeam = currentPlayer.fake_team === Team.RED ? Team.BLUE : Team.RED;
+      // Drunkard toggles between Red and Blue usually
+      const nextFake = currentPlayer.fake_team ? (currentPlayer.fake_team === Team.RED ? Team.BLUE : Team.RED) : (currentPlayer.team === Team.RED ? Team.BLUE : Team.RED);
+      
+      await supabase.from('players').update({ fake_team: nextFake }).eq('id', currentPlayer.id);
+  };
+
+  const handleDesignate = async () => {
+      if (!currentPlayer || designateSelection.length !== 2) return;
+      const type = currentPlayer.role?.capabilities?.designateCapability;
+      if (!type) return;
+
+      const p1 = designateSelection[0];
+      const p2 = designateSelection[1];
+      
+      // Update targets
+      const updates = designateSelection.map(pid => {
+          const p = players.find(pl => pl.id === pid);
+          const effects = p?.status_effects || {};
+          return supabase.from('players').update({
+              status_effects: {
+                  ...effects,
+                  [type === 'LOVE' ? 'love' : 'hate']: true,
+                  [type === 'LOVE' ? 'love_partner_id' : 'hate_partner_id']: pid === p1 ? p2 : p1
+              }
+          }).eq('id', pid);
+      });
+
+      await Promise.all(updates);
+      // Mark self as done
+      await supabase.from('players').update({ action_performed: true }).eq('id', currentPlayer.id);
+      setShowDesignateModal(false);
   };
 
   const startGameTimer = async () => {
@@ -696,7 +854,6 @@ export default function App() {
   };
 
   const pauseRound = async () => {
-    // When pausing (round end), reset exchange status
     await supabase.from('rooms').update({ 
         status: GameStatus.PAUSED, 
         round_end_time: null, 
@@ -723,7 +880,6 @@ export default function App() {
 
   const movePlayer = async (player: Player, targetRoom: 1 | 2) => {
       if (!currentRoom) return;
-      // Admin Manual Move
       await supabase.from('players').update({ room_number: targetRoom, is_leader: false }).eq('id', player.id);
   };
 
@@ -731,7 +887,6 @@ export default function App() {
       if (!currentPlayer || !currentPlayer.is_leader || !currentRoom) return;
       if (!currentPlayer.room_number) return;
       
-      // Determine selection limit based on round settings
       const currentRoundIdx = (currentRoom.current_round || 1) - 1;
       const maxSelect = currentRoom.settings.exchange_counts[currentRoundIdx] || 1;
 
@@ -754,19 +909,14 @@ export default function App() {
       }).eq('code', currentRoom.code);
   };
 
-  // Triggered by Leader directly -> Sets "READY" status
   const handleLeaderConfirmExchange = async () => {
       if (!currentPlayer || !currentPlayer.is_leader || !currentRoom) return;
-      
       const myRoom = currentPlayer.room_number;
       if (!myRoom) return;
-
-      // Mark this room as READY
       const nextStatus = {
           ...currentRoom.exchange_status,
           [myRoom === 1 ? 'room1_ready' : 'room2_ready']: true
       };
-      
       await supabase.from('rooms').update({ exchange_status: nextStatus }).eq('code', currentRoom.code);
   };
 
@@ -777,7 +927,6 @@ export default function App() {
               winner: winner, 
               status: GameStatus.FINISHED 
           }).eq('code', currentRoom.code);
-          
           if (error) throw error;
       } catch (e) {
           console.error("Error ending game:", e);
@@ -788,8 +937,6 @@ export default function App() {
   const restartGame = async () => {
     if (!currentRoom) return;
     if (!window.confirm("确定要重新开始游戏吗？所有玩家将回到大厅。")) return;
-
-    // Reset Room Status
     await supabase.from('rooms').update({
         status: GameStatus.LOBBY,
         current_round: 0,
@@ -799,7 +946,6 @@ export default function App() {
         exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
     }).eq('code', currentRoom.code);
 
-    // Reset All Players (keep connection, remove roles)
     await supabase.from('players').update({
         role: null,
         team: Team.GREY,
@@ -807,13 +953,17 @@ export default function App() {
         condition_met: false,
         room_number: null,
         is_leader: false,
-        verification_code: null
+        verification_code: null,
+        is_shared: false,
+        is_found: false,
+        action_performed: false,
+        fake_team: null,
+        status_effects: {}
     }).eq('room_code', currentRoom.code).neq('is_god', true);
   };
 
   const closeGame = async () => {
       if (!currentRoom || !window.confirm("确定要关闭房间并删除所有数据吗？所有玩家将被强制退出。")) return;
-      // Triggers DELETE event in Realtime listener
       await supabase.from('rooms').delete().eq('code', currentRoom.code);
   };
 
@@ -829,6 +979,7 @@ export default function App() {
                         <h1 className="text-6xl font-black mb-2 tracking-tighter drop-shadow-lg text-white font-traditional">兩室<span className="text-[#de0029]">一彈</span></h1>
                         <p className="text-white/70 font-bold tracking-widest text-sm">TWO ROOMS AND A BOOM</p>
                     </div>
+                    {joinLoading && <div className="text-center text-[#5abb2d] font-bold">正在恢复游戏...</div>}
                     <div className="space-y-4">
                         <button 
                             onClick={() => { setRoleMode('PLAYER'); setView('PLAYER_NAME'); }}
@@ -895,7 +1046,7 @@ export default function App() {
         );
     }
 
-    // 4. SHUFFLING ANIMATION
+    // 4. SHUFFLING
     if (shuffling && !currentPlayer?.is_god) {
         return (
             <div className="fixed inset-0 bg-[#4d4696] z-50 flex flex-col items-center justify-center">
@@ -969,16 +1120,11 @@ export default function App() {
         // Helper for Room Columns
         const renderRoomColumn = (roomNum: 1 | 2) => {
             const roomPlayers = players.filter(p => !p.is_god && p.room_number === roomNum);
-            
-            // Pending Exchanges (Array)
             const targetIds = roomNum === 1 ? currentRoom?.pending_exchanges?.room1_target_ids || [] : currentRoom?.pending_exchanges?.room2_target_ids || [];
-            
             const isReady = roomNum === 1 ? currentRoom?.exchange_status?.room1_ready : currentRoom?.exchange_status?.room2_ready;
             const swapExecuted = currentRoom?.exchange_status?.swap_executed;
             const isPaused = currentRoom?.status === GameStatus.PAUSED;
             const isLastRound = currentRoom && currentRoom.current_round >= currentRoom.settings.rounds;
-            
-            // Can edit leaders only if Paused AND Swap has happened AND NOT LAST ROUND
             const canEditLeader = isPaused && swapExecuted && !isLastRound;
 
             return (
@@ -987,7 +1133,6 @@ export default function App() {
                         <span>房间 {roomNum}</span>
                         <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{roomPlayers.length}人</span>
                     </div>
-                     {/* Status Banner - HIDE IF SWAP EXECUTED */}
                      {isPaused && !swapExecuted && (
                          <div className={`text-xs font-bold p-2 text-center ${isReady ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black animate-pulse'}`}>
                              {isReady ? '已准备就绪' : '等待领袖确认...'}
@@ -1000,14 +1145,20 @@ export default function App() {
                             return (
                                 <div key={p.id} className={`relative p-2 rounded-lg border transition group ${isSelected ? 'bg-yellow-500/20 border-yellow-500' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className="font-bold text-white text-sm truncate flex items-center gap-1">
+                                        <span className="font-bold text-white text-sm truncate flex flex-wrap items-center gap-1">
                                             {p.name}
+                                            {/* Status Badges */}
                                             {p.role?.relatedRoleId && (
                                                 <span title={p.condition_met ? "已关联" : "未关联"}>
                                                     <LinkIcon />
                                                     <span className={`w-2 h-2 rounded-full inline-block ml-0.5 ${p.condition_met ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                                 </span>
                                             )}
+                                            {p.is_shared && <span title="已分享"><MegaphoneIcon /></span>}
+                                            {p.is_found && <span title="已被找寻" className="text-blue-400"><SearchIcon /></span>}
+                                            {p.status_effects?.love && <span title="相爱"><HeartIcon /></span>}
+                                            {p.status_effects?.hate && <span title="相恨"><BrokenHeartIcon /></span>}
+
                                             {isSelected && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded font-black">交换</span>}
                                         </span>
                                         {p.role && (
@@ -1021,8 +1172,6 @@ export default function App() {
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 if (!canEditLeader) return;
-                                                
-                                                // Constraint: Only 1 leader per room. If setting to TRUE, unset others.
                                                 const isBecomingLeader = !p.is_leader;
                                                 if (isBecomingLeader) {
                                                     const existingLeader = roomPlayers.find(rp => rp.is_leader && rp.id !== p.id);
@@ -1030,7 +1179,6 @@ export default function App() {
                                                         await supabase.from('players').update({ is_leader: false }).eq('id', existingLeader.id);
                                                     }
                                                 }
-                                                
                                                 const { error } = await supabase.from('players').update({ is_leader: isBecomingLeader }).eq('id', p.id);
                                                 if(error) console.error("Update failed", error);
                                                 if(currentRoom) fetchPlayers(currentRoom.code);
@@ -1060,14 +1208,10 @@ export default function App() {
         };
 
         const swapExecuted = currentRoom?.exchange_status?.swap_executed;
-        // Validation for Next Round: Both rooms must have exactly 1 leader
         const r1LeaderCount = players.filter(p => !p.is_god && p.room_number === 1 && p.is_leader).length;
         const r2LeaderCount = players.filter(p => !p.is_god && p.room_number === 2 && p.is_leader).length;
-        // Last Round Exception: If we are at the end of the last round (current_round == rounds), we don't need leaders to proceed to "End Game" state (handled by Can Declare Win)
-        // But for intermediate rounds, we need leaders.
         const isLastRound = currentRoom && currentRoom.current_round >= currentRoom.settings.rounds;
         const leadersAssigned = (r1LeaderCount === 1 && r2LeaderCount === 1) || isLastRound;
-
         const canDeclareWin = swapExecuted || currentRoom?.status !== GameStatus.PAUSED;
 
         const getTeamStyle = (team: Team) => {
@@ -1095,7 +1239,6 @@ export default function App() {
                         <button disabled={!canDeclareWin} onClick={() => handleGameEnd(Team.BLUE)} className="bg-[#82a0d2] text-[#4c4595] px-3 py-1 rounded text-xs font-bold border border-white/20 hover:scale-105 transition disabled:opacity-30 disabled:cursor-not-allowed">蓝胜</button>
                         <button onClick={closeGame} className="bg-red-900/50 text-red-300 px-3 py-1 rounded text-xs font-bold">关闭</button>
                     </div>
-                    {/* Consistent Timer Style */}
                     <div className="ml-auto sm:ml-0">
                          <TimerDisplay timeLeft={timeLeft} />
                     </div>
@@ -1103,7 +1246,7 @@ export default function App() {
 
                 {currentRoom?.status === GameStatus.LOBBY ? (
                     <div className="flex-grow p-4 overflow-y-auto pb-24 space-y-6">
-                         {/* 1. Card Set Management */}
+                         {/* Card Set Management */}
                          <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
                                 <span className="text-sm font-bold">卡组管理</span>
@@ -1122,25 +1265,44 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Game Configuration */}
+                        {/* Custom Role Builder */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
-                                <span className="text-sm font-bold">游戏设置</span>
+                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-full sm:w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
+                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-full sm:w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
+                                    <option value={Team.BLUE}>蓝队</option>
+                                    <option value={Team.RED}>红队</option>
+                                    <option value={Team.GREY}>灰队</option>
+                                </select>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                    <label className="block text-white/50 mb-1">回合数</label>
-                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
-                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
-                                <div>
-                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
-                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
-                                </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
                             </div>
+                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (SVG/PNG/JPG)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            
+                            <button 
+                                onClick={() => {
+                                    if(!customRoleName) return;
+                                    const newRole = { 
+                                        id: customRoleId || `custom_${Date.now()}`, 
+                                        name: customRoleName, 
+                                        description: customRoleDesc, 
+                                        team: customRoleTeam, 
+                                        isKeyRole: false, 
+                                        isCustom: true, 
+                                        winCondition: customRoleWin,
+                                        relatedRoleId: customRoleRelation || undefined,
+                                        bgImage: customRoleImg || undefined
+                                    };
+                                    updateRoles([...currentRoom.custom_roles, newRole]);
+                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
+                                }}
+                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
+                            >添加至卡组</button>
                         </div>
 
                         {/* Current Deck */}
@@ -1151,7 +1313,6 @@ export default function App() {
                                     <div key={i} className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${r.team === Team.RED ? 'bg-[#de0029]/20 border-[#de0029]' : r.team === Team.BLUE ? 'bg-[#82a0d2]/20 border-[#82a0d2]' : 'bg-white/10 border-white/20'}`}>
                                         <span className="opacity-50 text-[9px] mr-1">[{r.id}]</span>
                                         {r.name}
-                                        {/* Allow delete if NOT Key Role OR Test Mode is Active */}
                                         {(!r.isKeyRole || testMode) && <button onClick={() => updateRoles(currentRoom.custom_roles.filter((_, idx) => idx !== i))} className="text-red-400 ml-1">×</button>}
                                     </div>
                                 ))}
@@ -1207,57 +1368,31 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* 2. Custom Role Builder */}
+                        {/* Game Configuration */}
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                            <h3 className="text-sm font-bold opacity-50 mb-2">添加自定义角色</h3>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <input value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} placeholder="角色名称 (繁体)" className="w-full sm:w-2/3 bg-black/20 p-2 rounded text-sm outline-none border border-white/10 focus:border-[#5abb2d] font-traditional" />
-                                <select value={customRoleTeam} onChange={e => setCustomRoleTeam(e.target.value as Team)} className="w-full sm:w-1/3 bg-black/20 p-2 rounded text-sm border border-white/10">
-                                    <option value={Team.BLUE}>蓝队</option>
-                                    <option value={Team.RED}>红队</option>
-                                    <option value={Team.GREY}>灰队</option>
-                                </select>
+                             <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                <span className="text-sm font-bold">游戏设置</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <input value={customRoleId} onChange={e => setCustomRoleId(e.target.value)} placeholder="ID (如: lover_a)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                                <input value={customRoleRelation} onChange={e => setCustomRoleRelation(e.target.value)} placeholder="关联ID (如: lover_b)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label className="block text-white/50 mb-1">回合数</label>
+                                    <input type="number" value={configRounds} onChange={e => setConfigRounds(parseInt(e.target.value))} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">时长(分,逗号隔开)</label>
+                                    <input type="text" value={configRoundLengths} onChange={e => setConfigRoundLengths(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
+                                <div>
+                                    <label className="block text-white/50 mb-1">人质数(逗号隔开)</label>
+                                    <input type="text" value={configExchangeCounts} onChange={e => setConfigExchangeCounts(e.target.value)} className="w-full bg-black/20 p-2 rounded outline-none border border-white/10 text-center" />
+                                </div>
                             </div>
-                            <input value={customRoleDesc} onChange={e => setCustomRoleDesc(e.target.value)} placeholder="描述" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleWin} onChange={e => setCustomRoleWin(e.target.value)} placeholder="胜利条件" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            <input value={customRoleImg} onChange={e => setCustomRoleImg(e.target.value)} placeholder="背景图片链接 (SVG/PNG/JPG)" className="w-full bg-black/20 p-2 rounded text-sm outline-none border border-white/10" />
-                            
-                            <button 
-                                onClick={() => {
-                                    if(!customRoleName) return;
-                                    const newRole = { 
-                                        id: customRoleId || `custom_${Date.now()}`, 
-                                        name: customRoleName, 
-                                        description: customRoleDesc, 
-                                        team: customRoleTeam, 
-                                        isKeyRole: false, 
-                                        isCustom: true, 
-                                        winCondition: customRoleWin,
-                                        relatedRoleId: customRoleRelation || undefined,
-                                        bgImage: customRoleImg || undefined
-                                    };
-                                    updateRoles([...currentRoom.custom_roles, newRole]);
-                                    setCustomRoleName(''); setCustomRoleId(''); setCustomRoleDesc(''); setCustomRoleWin(''); setCustomRoleRelation(''); setCustomRoleImg('');
-                                }}
-                                className="w-full bg-[#5abb2d] py-2 rounded font-bold text-sm"
-                            >添加至卡组</button>
                         </div>
 
                     </div>
                 ) : (
                     // GAME VIEW (God Dashboard)
                     <div className="flex-grow flex flex-col p-2 gap-2 min-h-0">
-                        {currentRoom?.status === GameStatus.PAUSED && (
-                             <div className={`flex flex-col gap-2 p-2 bg-black/20 rounded-xl border border-white/10 animate-in fade-in ${swapExecuted ? 'hidden' : ''}`}>
-                                 <div className="text-xs text-center font-bold text-orange-200">
-                                     {!swapExecuted ? "交换阶段：等待领袖确认交换..." : ""}
-                                 </div>
-                             </div>
-                        )}
                         <div className="flex-grow flex gap-2 min-h-0">
                             {renderRoomColumn(1)}
                             {renderRoomColumn(2)}
@@ -1311,21 +1446,79 @@ export default function App() {
         );
     }
 
-    // 8. PLAYER GAME (Card Flip & Leader UI)
+    // 8. PLAYER GAME
     if (currentPlayer?.role) {
-        // Exchange Selection Mode for Leader
-        if (currentRoom?.status === GameStatus.PAUSED && currentPlayer.is_leader) {
+        // Find Modal
+        if (showFindModal) {
+            const targets = players.filter(p => !p.is_god && p.id !== currentPlayer.id);
+            return (
+                <div className="fixed inset-0 z-50 bg-[#2d285e] flex flex-col p-6">
+                    <h2 className="text-2xl font-black text-white text-center mb-6">找寻目标</h2>
+                    <div className="flex-grow overflow-y-auto space-y-2 custom-scrollbar">
+                        {targets.map(p => (
+                            <button
+                                key={p.id}
+                                onClick={() => setFindSelection(p.id)}
+                                className={`w-full p-4 rounded-xl flex justify-between items-center transition ${findSelection === p.id ? 'bg-blue-600 text-white' : 'bg-white/10 text-white'}`}
+                            >
+                                {p.name}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-4 flex gap-4">
+                        <button onClick={() => setShowFindModal(false)} className="flex-1 bg-white/20 py-3 rounded-xl font-bold">取消</button>
+                        <button onClick={handleFindTarget} disabled={!findSelection} className="flex-1 bg-blue-600 py-3 rounded-xl font-bold disabled:opacity-50">确认</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Designate Modal (Cupid/Eris)
+        if (showDesignateModal) {
+             const targets = players.filter(p => !p.is_god && p.id !== currentPlayer.id);
+             return (
+                 <div className="fixed inset-0 z-[100] bg-[#2d285e] flex flex-col p-6">
+                     <h2 className="text-2xl font-black text-white text-center mb-2">指定关系 ({currentPlayer.role.capabilities?.designateCapability === 'LOVE' ? '相爱' : '相恨'})</h2>
+                     <p className="text-center text-white/50 text-sm mb-4">必须选择 2 名玩家</p>
+                     
+                     <div className="flex-grow overflow-y-auto space-y-2 custom-scrollbar">
+                         {targets.map(p => {
+                             const isSelected = designateSelection.includes(p.id);
+                             return (
+                                 <button
+                                     key={p.id}
+                                     onClick={() => {
+                                         if (isSelected) setDesignateSelection(prev => prev.filter(id => id !== p.id));
+                                         else {
+                                             if(designateSelection.length < 2) setDesignateSelection(prev => [...prev, p.id]);
+                                         }
+                                     }}
+                                     className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-pink-600 text-white' : 'bg-white/10 text-white'}`}
+                                 >
+                                     {p.name} {isSelected && '✓'}
+                                 </button>
+                             );
+                         })}
+                     </div>
+                     <button 
+                         onClick={handleDesignate} 
+                         disabled={designateSelection.length !== 2} 
+                         className="mt-4 w-full bg-pink-600 py-3 rounded-xl font-bold disabled:opacity-50"
+                     >
+                         确认指定
+                     </button>
+                 </div>
+             );
+        }
+
+        if (currentRoom?.status === GameStatus.PAUSED && currentPlayer.is_leader && !currentRoom.exchange_status?.swap_executed) {
              const myRoomPlayers = players.filter(p => p.room_number === currentPlayer.room_number && !p.is_god);
              const targetIds = currentPlayer.room_number === 1 ? currentRoom.pending_exchanges?.room1_target_ids || [] : currentRoom.pending_exchanges?.room2_target_ids || [];
-             
              const myReady = currentPlayer.room_number === 1 ? currentRoom.exchange_status?.room1_ready : currentRoom.exchange_status?.room2_ready;
-             const swapExecuted = currentRoom.exchange_status?.swap_executed;
-
-             // Selection Logic Limit
              const currentRoundIdx = (currentRoom.current_round || 1) - 1;
              const requiredCount = currentRoom.settings.exchange_counts[currentRoundIdx] || 1;
 
-             if (!swapExecuted && myReady) {
+             if (myReady) {
                  return (
                     <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 items-center justify-center">
                         <div className="animate-spin text-4xl mb-4">⏳</div>
@@ -1335,42 +1528,38 @@ export default function App() {
                  );
              }
              
-             // If Swap NOT executed AND Not Ready -> Show Selection UI
-             if (!swapExecuted) {
-                 return (
-                    <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
-                        <h2 className="text-2xl font-black text-white text-center mb-1 font-traditional">选择交换人质</h2>
-                        <p className="text-center text-white/50 mb-6 text-xs">需选择 {requiredCount} 人</p>
-                        
-                        <div className="flex-grow space-y-3 overflow-y-auto custom-scrollbar">
-                            {myRoomPlayers.map(p => {
-                                const isSelected = targetIds.includes(p.id);
-                                return (
-                                    <button 
-                                        key={p.id}
-                                        onClick={() => handleLeaderExchangeSelect(p.id)}
-                                        className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                                    >
-                                        <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
-                                        {isSelected && <CheckCircleIcon />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                             <button 
-                                onClick={handleLeaderConfirmExchange}
-                                disabled={targetIds.length !== requiredCount}
-                                className="w-full bg-[#5abb2d] text-white py-4 rounded-xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                             >
-                                 确认交换 ({targetIds.length}/{requiredCount})
-                             </button>
-                             <p className="mt-2 text-center text-white/30 text-xs">需双方领袖都确认后才会执行</p>
-                        </div>
+             return (
+                <div className="min-h-screen bg-[#2d285e] p-6 flex flex-col z-20 relative">
+                    <h2 className="text-2xl font-black text-white text-center mb-1 font-traditional">选择交换人质</h2>
+                    <p className="text-center text-white/50 mb-6 text-xs">需选择 {requiredCount} 人</p>
+                    
+                    <div className="flex-grow space-y-3 overflow-y-auto custom-scrollbar">
+                        {myRoomPlayers.map(p => {
+                            const isSelected = targetIds.includes(p.id);
+                            return (
+                                <button 
+                                    key={p.id}
+                                    onClick={() => handleLeaderExchangeSelect(p.id)}
+                                    className={`w-full p-4 rounded-xl flex justify-between items-center transition ${isSelected ? 'bg-yellow-500 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                >
+                                    <span className="font-bold">{p.name} {p.id === currentPlayer.id ? '(我)' : ''}</span>
+                                    {isSelected && <CheckCircleIcon />}
+                                </button>
+                            );
+                        })}
                     </div>
-                 );
-             }
+                    
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                         <button 
+                            onClick={handleLeaderConfirmExchange}
+                            disabled={targetIds.length !== requiredCount}
+                            className="w-full bg-[#5abb2d] text-white py-4 rounded-xl font-bold text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                             确认交换 ({targetIds.length}/{requiredCount})
+                         </button>
+                    </div>
+                </div>
+             );
         }
 
         return (
@@ -1378,15 +1567,20 @@ export default function App() {
                 {/* Top Info */}
                 <div className="p-4 flex justify-between items-center z-10 bg-[#2d285e]/80 backdrop-blur border-b border-white/10">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${currentPlayer.team === Team.RED ? 'bg-[#de0029]' : currentPlayer.team === Team.BLUE ? 'bg-[#82a0d2]' : 'bg-[#9b9794]'}`}>
-                            <UserIcon />
-                        </div>
+                        {/* Avatar hidden if Drunkard capability is active (fakeTeam present, or just hide to allow confusion?) */}
+                        {/* Requirement: Remove avatar for Color Change role */}
+                        {!currentPlayer.role.capabilities?.canChangeColor ? (
+                            <div className={`p-2 rounded-full ${currentPlayer.team === Team.RED ? 'bg-[#de0029]' : currentPlayer.team === Team.BLUE ? 'bg-[#82a0d2]' : 'bg-[#9b9794]'}`}>
+                                <UserIcon />
+                            </div>
+                        ) : (
+                            <div className="p-2 rounded-full bg-purple-500 text-white">?</div>
+                        )}
                         <div>
                             <div className="font-bold text-white leading-none">{currentPlayer.name}</div>
                             <div className="text-xs text-white/60">房间 {currentPlayer.room_number || '?'}</div>
                         </div>
                     </div>
-                    {/* Round Info for Player */}
                     {currentRoom?.current_round ? (
                          <div className="bg-white/10 text-xs px-3 py-1.5 rounded-full font-mono font-bold border border-white/20">
                             Round {currentRoom.current_round} / {currentRoom.settings.rounds}
@@ -1396,20 +1590,16 @@ export default function App() {
                 </div>
 
                 <div className="flex-grow flex items-center justify-center p-6 perspective-1000">
-                    {/* Card Container - 3:4 Aspect Ratio */}
                     <div 
                         onClick={() => setIsFlipped(!isFlipped)} 
                         className={`relative w-full max-w-[320px] aspect-[3/4] transition-transform duration-700 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
                     >
-                        {/* FRONT (Hidden initially, Back of card visually) */}
                         <div className="absolute inset-0 backface-hidden rounded-2xl border-4 border-white/20 bg-gradient-to-br from-[#4c4595] to-[#2d285e] flex flex-col items-center justify-center shadow-2xl p-6">
-                             {/* UPDATED: App Logo Style */}
                             <div className="text-white/20 text-9xl absolute opacity-10">💣</div>
                             <h2 className="text-4xl font-black text-white font-traditional mb-4 tracking-widest text-center">兩室<br/><span className="text-[#de0029]">一彈</span></h2>
                             <div className="mt-8 border-2 border-white/30 px-6 py-2 rounded-full text-white/50 text-sm font-bold tracking-widest uppercase font-traditional group-hover:bg-white/10 transition">点击查看</div>
                         </div>
 
-                        {/* BACK (Revealed, Actual Role) */}
                         <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl shadow-2xl bg-white" onClick={e => e.stopPropagation()}>
                             <CardDisplay 
                                 role={currentPlayer.role} 
@@ -1418,6 +1608,11 @@ export default function App() {
                                 onVerify={handleVerifyRole}
                                 conditionMet={currentPlayer.condition_met}
                                 isLeader={currentPlayer.is_leader}
+                                isShared={currentPlayer.is_shared}
+                                onShare={handleShareCard}
+                                onFind={() => setShowFindModal(true)}
+                                onColorChange={handleColorChange}
+                                fakeTeam={currentPlayer.fake_team}
                             />
                             <button onClick={() => setIsFlipped(false)} className="absolute top-2 right-2 text-black/20 hover:text-black text-xl font-bold p-2 z-20">×</button>
                         </div>
@@ -1438,15 +1633,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-        {/* Persistent Background Layer */}
         <FloatingIcons />
         <BackgroundMusic isHome={view === 'HOME'} />
-        
-        {/* Alerts Overlay */}
         {showLeaderOverlay && <LeaderAppointmentOverlay />}
         {showExchangeAlert && currentPlayer?.room_number && <ExchangeAlert targetRoom={currentPlayer.room_number} />}
-
-        {/* Main Application Logic */}
         {renderContent()}
     </div>
   );

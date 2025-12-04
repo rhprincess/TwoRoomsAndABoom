@@ -38,7 +38,14 @@ create table players (
   joined_at timestamptz default now(),
   room_number int,
   is_leader boolean default false,
-  verification_code text
+  verification_code text,
+  
+  -- New Status Columns
+  is_shared boolean default false,
+  is_found boolean default false,
+  action_performed boolean default false,
+  fake_team text,
+  status_effects jsonb default '{}'
 );
 
 -- 3. Create Card Sets Table (New)
