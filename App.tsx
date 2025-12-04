@@ -77,6 +77,20 @@ const ExchangeAlert = ({ targetRoom }: { targetRoom: number }) => (
     </div>
 );
 
+// Round Start Overlay
+const RoundOverlay = ({ round }: { round: number }) => (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center pointer-events-none">
+        <div className="transform transition-all duration-300 animate-in zoom-in-50 fade-in slide-in-from-bottom-10">
+            <div className="bg-black/60 backdrop-blur-xl border-4 border-[#5abb2d] px-12 py-8 rounded-3xl shadow-2xl flex flex-col items-center">
+                <span className="text-white/80 font-bold uppercase tracking-[0.5em] text-sm mb-2">ROUND START</span>
+                <h1 className="text-6xl font-black text-white font-traditional drop-shadow-[0_0_15px_rgba(90,187,45,0.6)]">
+                    第 {round} 回合
+                </h1>
+            </div>
+        </div>
+    </div>
+);
+
 // Background Music Component
 const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -401,6 +415,7 @@ export default function App() {
   const [saveSetName, setSaveSetName] = useState('');
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
+  const [isDistributing, setIsDistributing] = useState(false);
 
   // New Mechanic States
   const [showFindModal, setShowFindModal] = useState(false);
@@ -417,9 +432,11 @@ export default function App() {
   const [shuffling, setShuffling] = useState(false);
   const [showLeaderOverlay, setShowLeaderOverlay] = useState(false);
   const [showExchangeAlert, setShowExchangeAlert] = useState(false);
+  const [showRoundStartOverlay, setShowRoundStartOverlay] = useState(false);
   
   const prevRoomRef = useRef<number | null>(null);
   const prevIsLeader = useRef<boolean>(false);
+  const prevRoundRef = useRef<number>(0);
 
   // --- Session Restore ---
   useEffect(() => {
@@ -522,6 +539,24 @@ export default function App() {
     }
     prevRoomRef.current = currentPlayer?.room_number || null;
   }, [currentPlayer?.room_number]);
+
+  // --- Round Start Overlay Logic ---
+  useEffect(() => {
+      if (currentRoom?.status === GameStatus.PLAYING && currentRoom.current_round > 0) {
+          if (currentRoom.current_round !== prevRoundRef.current) {
+              prevRoundRef.current = currentRoom.current_round;
+              setShowRoundStartOverlay(true);
+              const timer = setTimeout(() => {
+                  setShowRoundStartOverlay(false);
+              }, 1000);
+              return () => clearTimeout(timer);
+          }
+      }
+      // Sync ref if loaded mid-game
+      if (currentRoom && currentRoom.current_round > prevRoundRef.current) {
+          prevRoundRef.current = currentRoom.current_round;
+      }
+  }, [currentRoom?.current_round, currentRoom?.status]);
 
   // --- Leader Appointment Overlay Logic ---
   useEffect(() => {
@@ -718,97 +753,104 @@ export default function App() {
   };
 
   const distributeRoles = async () => {
-      if (!currentRoom) return;
-      
-      const playingPlayers = players.filter(p => !p.is_god);
-      const playerCount = playingPlayers.length;
+      if (!currentRoom || isDistributing) return;
+      setIsDistributing(true);
+      try {
+        const playingPlayers = players.filter(p => !p.is_god);
+        const playerCount = playingPlayers.length;
 
-      // Validation
-      if (!testMode) {
-          if (playerCount < currentRoom.settings.min_players) {
-              alert(`人数不足，至少 ${currentRoom.settings.min_players} 人`);
-              return;
-          }
-          // Removed even number restriction as requested
-      } else {
-          if (playerCount === 0) {
-              alert("没有玩家");
-              return;
-          }
-      }
+        // Validation
+        if (!testMode) {
+            if (playerCount < currentRoom.settings.min_players) {
+                alert(`人数不足，至少 ${currentRoom.settings.min_players} 人`);
+                return;
+            }
+            // Removed even number restriction as requested
+        } else {
+            if (playerCount === 0) {
+                alert("没有玩家");
+                return;
+            }
+        }
 
-      // Config Parsing
-      const lengths = configRoundLengths.split(',').map(s => parseInt(s.trim()) * 60);
-      const exchanges = configExchangeCounts.split(',').map(s => parseInt(s.trim()));
-      
-      const newSettings = {
-          ...currentRoom.settings,
-          rounds: configRounds,
-          round_lengths: lengths,
-          exchange_counts: exchanges
-      };
+        // Config Parsing
+        const lengths = configRoundLengths.split(',').map(s => parseInt(s.trim()) * 60);
+        const exchanges = configExchangeCounts.split(',').map(s => parseInt(s.trim()));
+        
+        const newSettings = {
+            ...currentRoom.settings,
+            rounds: configRounds,
+            round_lengths: lengths,
+            exchange_counts: exchanges
+        };
 
-      const deck = [...currentRoom.custom_roles];
-      if (deck.length > playerCount) {
-          alert("卡牌数量多于玩家数量");
-          return;
-      }
-      
-      const remaining = playerCount - deck.length;
-      const blueFill = BASE_ROLES.find(r => r.id === 'blue_team')!;
-      const redFill = BASE_ROLES.find(r => r.id === 'red_team')!;
-      // Simple fill logic, roughly balanced
-      for(let i=0; i<Math.ceil(remaining/2); i++) deck.push(blueFill);
-      for(let i=0; i<Math.floor(remaining/2); i++) deck.push(redFill);
-      
-      const shuffledDeck = deck.sort(() => Math.random() - 0.5);
-      const shuffledPlayers = [...playingPlayers].sort(() => Math.random() - 0.5);
-      const half = Math.ceil(playerCount / 2);
-
-      for (let i = 0; i < playerCount; i++) {
-        const role = shuffledDeck[i];
-        let vCode = undefined;
-        if (role.relatedRoleId) {
-            vCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const deck = [...currentRoom.custom_roles];
+        if (deck.length > playerCount) {
+            alert("卡牌数量多于玩家数量");
+            return;
         }
         
-        const roomNum = i < half ? 1 : 2;
+        const remaining = playerCount - deck.length;
+        const blueFill = BASE_ROLES.find(r => r.id === 'blue_team')!;
+        const redFill = BASE_ROLES.find(r => r.id === 'red_team')!;
+        // Simple fill logic, roughly balanced
+        for(let i=0; i<Math.ceil(remaining/2); i++) deck.push(blueFill);
+        for(let i=0; i<Math.floor(remaining/2); i++) deck.push(redFill);
+        
+        const shuffledDeck = deck.sort(() => Math.random() - 0.5);
+        const shuffledPlayers = [...playingPlayers].sort(() => Math.random() - 0.5);
+        const half = Math.ceil(playerCount / 2);
 
-        await supabase.from('players').update({ 
-            role: role, 
-            team: role.team, 
-            condition_met: false,
-            room_number: roomNum,
-            is_leader: false,
-            verification_code: vCode,
-            is_shared: false,
-            is_found: false,
-            action_performed: false,
-            fake_team: null,
-            status_effects: {}
-        }).eq('id', shuffledPlayers[i].id);
+        for (let i = 0; i < playerCount; i++) {
+            const role = shuffledDeck[i];
+            let vCode = undefined;
+            if (role.relatedRoleId) {
+                vCode = Math.floor(100000 + Math.random() * 900000).toString();
+            }
+            
+            const roomNum = i < half ? 1 : 2;
+
+            await supabase.from('players').update({ 
+                role: role, 
+                team: role.team, 
+                condition_met: false,
+                room_number: roomNum,
+                is_leader: false,
+                verification_code: vCode,
+                is_shared: false,
+                is_found: false,
+                action_performed: false,
+                fake_team: null,
+                status_effects: {}
+            }).eq('id', shuffledPlayers[i].id);
+        }
+        
+        const room1Players = shuffledPlayers.slice(0, half);
+        const room2Players = shuffledPlayers.slice(half);
+
+        const r1Leader = room1Players.find((_, idx) => shuffledDeck[idx].id === 'president') || room1Players[0];
+        const r2Leader = room2Players.find((_, idx) => shuffledDeck[half + idx].id === 'bomber') || room2Players[0];
+
+        if(r1Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r1Leader.id);
+        if(r2Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r2Leader.id);
+
+        await supabase.from('rooms').update({
+            status: GameStatus.DISTRIBUTING,
+            current_round: 0,
+            settings: newSettings,
+            pending_exchanges: {}, 
+            exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
+        }).eq('code', currentRoom.code);
+
+        setTimeout(async () => {
+            await supabase.from('rooms').update({ status: GameStatus.READY_TO_START }).eq('code', currentRoom.code);
+        }, 3500);
+      } catch (e: any) {
+          console.error(e);
+          alert("Distribute Error");
+      } finally {
+          setIsDistributing(false);
       }
-      
-      const room1Players = shuffledPlayers.slice(0, half);
-      const room2Players = shuffledPlayers.slice(half);
-
-      const r1Leader = room1Players.find((_, idx) => shuffledDeck[idx].id === 'president') || room1Players[0];
-      const r2Leader = room2Players.find((_, idx) => shuffledDeck[half + idx].id === 'bomber') || room2Players[0];
-
-      if(r1Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r1Leader.id);
-      if(r2Leader) await supabase.from('players').update({ is_leader: true }).eq('id', r2Leader.id);
-
-      await supabase.from('rooms').update({
-          status: GameStatus.DISTRIBUTING,
-          current_round: 0,
-          settings: newSettings,
-          pending_exchanges: {}, 
-          exchange_status: { room1_ready: false, room2_ready: false, swap_executed: false }
-      }).eq('code', currentRoom.code);
-
-      setTimeout(async () => {
-          await supabase.from('rooms').update({ status: GameStatus.READY_TO_START }).eq('code', currentRoom.code);
-      }, 3500);
   };
 
   // --- Mechanic Handlers ---
@@ -1008,6 +1050,11 @@ export default function App() {
   const closeGame = async () => {
       if (!currentRoom || !window.confirm("确定要关闭房间并删除所有数据吗？所有玩家将被强制退出。")) return;
       await supabase.from('rooms').delete().eq('code', currentRoom.code);
+  };
+
+  const handleToggleLeader = async (p: Player) => {
+    // Moved helper out of render for better scope access if needed, but keeping inside for closure is fine.
+    // Logic was inside renderRoomColumn.
   };
 
   // --- View Rendering ---
@@ -1215,16 +1262,21 @@ export default function App() {
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 if (!canEditLeader) return;
+                                                
                                                 const isBecomingLeader = !p.is_leader;
                                                 if (isBecomingLeader) {
-                                                    const existingLeader = roomPlayers.find(rp => rp.is_leader && rp.id !== p.id);
-                                                    if (existingLeader) {
-                                                        await supabase.from('players').update({ is_leader: false }).eq('id', existingLeader.id);
-                                                    }
+                                                    // STRICT: Clear everyone in this room first
+                                                    await supabase.from('players')
+                                                        .update({ is_leader: false })
+                                                        .eq('room_code', currentRoom.code)
+                                                        .eq('room_number', p.room_number);
+                                                    
+                                                    // Then set target
+                                                    await supabase.from('players').update({ is_leader: true }).eq('id', p.id);
+                                                } else {
+                                                    await supabase.from('players').update({ is_leader: false }).eq('id', p.id);
                                                 }
-                                                const { error } = await supabase.from('players').update({ is_leader: isBecomingLeader }).eq('id', p.id);
-                                                if(error) console.error("Update failed", error);
-                                                if(currentRoom) fetchPlayers(currentRoom.code);
+                                                if (currentRoom) fetchPlayers(currentRoom.code);
                                             }}
                                             disabled={!canEditLeader}
                                             className={`relative z-10 p-1.5 rounded transition ${p.is_leader ? 'bg-yellow-400 text-yellow-900' : 'text-white/20 hover:text-yellow-400'} ${(!p.is_leader && canEditLeader) ? 'animate-pulse ring-2 ring-yellow-400/50' : ''} ${!canEditLeader ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -1677,6 +1729,7 @@ export default function App() {
         <BackgroundMusic isHome={view === 'HOME'} />
         {showLeaderOverlay && <LeaderAppointmentOverlay />}
         {showExchangeAlert && currentPlayer?.room_number && <ExchangeAlert targetRoom={currentPlayer.room_number} />}
+        {showRoundStartOverlay && currentRoom && <RoundOverlay round={currentRoom.current_round} />}
         {renderContent()}
     </div>
   );
