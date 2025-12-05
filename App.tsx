@@ -509,7 +509,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                     {/* Toggle Button (Moved to Top Left) */}
                     <button 
                         onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                        className="absolute top-2 left-2 z-30 p-1 hover:opacity-70 transition active:scale-95"
+                        className="absolute top-2 left-2 z-30 p-1 text-white hover:opacity-70 transition active:scale-95"
                     >
                         {isExpanded ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}
                     </button>
