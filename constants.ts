@@ -33,7 +33,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: true,
     winCondition: '躲避炸彈客',
-    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/president.png'
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/president.svg'
   },
   {
     id: 'bomber',
@@ -42,7 +42,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: true,
     winCondition: '跟著總統',
-    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/bomber.png'
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/bomber.svg'
   },
   {
     id: 'team_blue_member',
@@ -50,7 +50,8 @@ export const BASE_ROLES: Role[] = [
     description: '保护总统。让炸弹人远离总统。如果总统存活，你获胜。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '想盡辦法讓總統遠離炸彈客'
+    winCondition: '想盡辦法讓總統遠離炸彈客',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/blue_member.svg'
   },
   {
     id: 'team_red_member',
@@ -58,7 +59,8 @@ export const BASE_ROLES: Role[] = [
     description: '帮助炸弹人找到总统。如果炸弹人炸死总统，你获胜。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '想盡辦法讓炸彈客在總統身邊'
+    winCondition: '想盡辦法讓炸彈客在總統身邊',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/red_member.svg'
   },
   {
     id: 'doctor',
@@ -67,7 +69,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '必須找到總統',
-    capabilities: { canFind: ['president', 'daughter_of_president'] }
+    capabilities: { canFind: ['president', 'daughter_of_president'] },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/doctor.svg'
   },
   {
     id: 'engineer',
@@ -76,7 +79,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '必須找到炸彈客',
-    capabilities: { canFind: ['bomber', 'bomb_descendent'] }
+    capabilities: { canFind: ['bomber', 'bomb_descendent'] },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/engineer.svg'
   },
   {
     id: 'red_spy',
@@ -84,7 +88,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你实际上是红队的人，但在卡牌上伪装成蓝队。试图渗透蓝队。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '滲透進藍隊！'
+    winCondition: '滲透進藍隊！',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/red_spy.svg'
   },
     {
     id: 'blue_spy',
@@ -92,7 +97,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你实际上是蓝队的人，但在卡牌上伪装成红队。试图渗透红队。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '滲透進紅隊！'
+    winCondition: '滲透進紅隊！',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/blue_spy.svg'
   },
   {
     id: 'shy_guy_a',
@@ -102,7 +108,8 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     relatedRoleId: 'shy_guy_b',
     relatedRoleName: '害羞小子',
-    winCondition: '兩個人一起害羞'
+    winCondition: '兩個人一起害羞',
+    bgImage: ''
   },
   {
     id: 'shy_guy_b',
@@ -112,7 +119,8 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     relatedRoleId: 'shy_guy_a',
     relatedRoleName: '害羞小子',
-    winCondition: '兩個人一起害羞'
+    winCondition: '兩個人一起害羞',
+    bgImage: ''
   },
   {
     id: 'negotiator_red',
@@ -121,7 +129,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '你只能分享卡牌',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/negotiator_red.svg'
   },
     {
     id: 'negotiator_blue',
@@ -130,7 +139,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '你只能分享卡牌',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/negotiator_blue.svg'
   },
   {
     id: 'shyshy_red',
@@ -139,7 +149,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '過於靦腆只能分享顏色',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/shyshyboy_red.svg'
   },
   {
     id: 'shyshy_blue',
@@ -148,7 +159,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '過於靦腆只能分享顏色',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/shyshyboy_blue.svg'
   },
   {
     id: 'bomb_descendent',
@@ -156,7 +168,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你是炸弹客的继承者，如果你队伍没有炸弹客，你需要继承TA的身份。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '如果沒有炸彈客…你就是炸彈客'
+    winCondition: '如果沒有炸彈客…你就是炸彈客',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/bomb_decendent.svg'
   },
   {
     id: 'daughter_of_president',
@@ -164,7 +177,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你是炸弹客总统的女儿，如果你的队伍没有总统，你需要继承TA的身份。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '如果沒有總統…你就是繼任'
+    winCondition: '如果沒有總統…你就是繼任',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/daughter_of_president.svg'
   },
   {
     id: 'tinker',
@@ -173,7 +187,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '如果沒有工程師…你就是工程師',
-    capabilities: { canFind: ['bomber', 'bomb_descendent'] }
+    capabilities: { canFind: ['bomber', 'bomb_descendent'] },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/tinker.svg'
   },
   {
     id: 'nurse',
@@ -182,7 +197,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '如果沒有醫生…你就是醫生',
-    capabilities: { canFind: ['president', 'daughter_of_president'] }
+    capabilities: { canFind: ['president', 'daughter_of_president'] },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/nurse.svg'
   },
   {
     id: 'pengpeng_doctor',
@@ -191,7 +207,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '與總統分享吧',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/pengpeng_doctor.svg'
   },
   {
     id: 'knight_of_tuesday',
@@ -200,7 +217,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '與炸彈客分享吧',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/knight_of_tuesday.svg'
   },
   {
     id: 'angel_red',
@@ -208,7 +226,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你只能说真话。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '說真話'
+    winCondition: '說真話',
+    bgImage: ''
   },
   {
     id: 'angel_blue',
@@ -216,7 +235,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你只能说真话。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '說真話'
+    winCondition: '說真話',
+    bgImage: ''
   },
   {
     id: 'monster_red',
@@ -224,7 +244,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你只能说假话',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '撒謊'
+    winCondition: '撒謊',
+    bgImage: ''
   },
   {
     id: 'monster_blue',
@@ -232,7 +253,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你只能说假话',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '撒謊'
+    winCondition: '撒謊',
+    bgImage: ''
   },
   {
     id: 'mute_clown_red',
@@ -240,7 +262,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队。你在游戏中永远不能说话。',
     team: Team.RED,
     isKeyRole: false,
-    winCondition: '永遠不要說話'
+    winCondition: '永遠不要說話',
+    bgImage: ''
   },
   {
     id: 'mute_clown_blue',
@@ -248,7 +271,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队。你在游戏中永远不能说话。',
     team: Team.BLUE,
     isKeyRole: false,
-    winCondition: '永遠不要說話'
+    winCondition: '永遠不要說話',
+    bgImage: ''
   },
   {
     id: 'mummy_red',
@@ -257,7 +281,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '避免分享傳染！',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: ''
   },
   {
     id: 'mummy_blue',
@@ -266,7 +291,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '避免分享傳染！',
-    capabilities: { canShare: true }
+    capabilities: { canShare: true },
+    bgImage: ''
   },
   {
     id: 'cupid',
@@ -275,7 +301,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '整局隻能用一次，指定兩名玩家相愛',
-    capabilities: { designateCapability: 'LOVE' }
+    capabilities: { designateCapability: 'LOVE' },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/cupid.svg'
   },
   {
     id: 'eris',
@@ -284,7 +311,8 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '整局隻能用一次，指定兩名玩家相恨',
-    capabilities: { designateCapability: 'HATE' }
+    capabilities: { designateCapability: 'HATE' },
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/eris.svg'
   },
   {
     id: 'ahah',
@@ -292,7 +320,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你和莫比为憎恨关系，你们不能在一个房间，同时你要与总统在一起，避免被炸弹客炸死。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '遠離莫比，靠近總統'
+    winCondition: '遠離莫比，靠近總統',
+    bgImage: ''
   },
   {
     id: 'mobby',
@@ -300,7 +329,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你和亚哈为憎恨关系，你们不能在一个房间，同时你要与总统在一起，避免被炸弹客炸死。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '遠離亞哈，靠近總統'
+    winCondition: '遠離亞哈，靠近總統',
+    bgImage: ''
   },
   {
     id: 'housekeeper',
@@ -308,7 +338,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与总统和女仆待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '與女僕和總統待在一起'
+    winCondition: '與女僕和總統待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/housekeeper.svg'
   },
   {
     id: 'maid',
@@ -316,7 +347,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与总统和管家待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '與管家和總統待在一起'
+    winCondition: '與管家和總統待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/miad.svg'
   },
   {
     id: 'romeo',
@@ -324,7 +356,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与炸弹客和朱丽叶待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '與炸彈客和朱麗葉待在一起'
+    winCondition: '與炸彈客和朱麗葉待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/romeo.svg'
   },
   {
     id: 'juliet',
@@ -332,7 +365,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与炸弹客和罗密欧待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '與炸彈客和羅密歐待在一起'
+    winCondition: '與炸彈客和羅密歐待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/juliet.svg'
   },
   {
     id: 'wife',
@@ -340,7 +374,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与总统待在一起并远离情妇。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '和總統待在一起遠離情婦'
+    winCondition: '和總統待在一起遠離情婦',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/wife.svg'
   },
   {
     id: 'mistress',
@@ -348,7 +383,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要与总统待在一起并躲避妻子。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '和總統待在一起躲避妻子'
+    winCondition: '和總統待在一起躲避妻子',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mistress.svg'
   },
   {
     id: 'trainee',
@@ -356,7 +392,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你是中性角色，需要与总统待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '和總統待在一起'
+    winCondition: '和總統待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/intern.svg'
   },
   {
     id: 'victim',
@@ -364,7 +401,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你是中性角色，需要与炸弹客待在一起。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '和炸彈客待在一起'
+    winCondition: '和炸彈客待在一起',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/victim.svg'
   },
   {
     id: 'competitor',
@@ -372,7 +410,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你是中性角色，你需要远离总统。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '遠離總統'
+    winCondition: '遠離總統',
+    bgImage: ''
   },
   {
     id: 'survivor',
@@ -380,7 +419,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你是中性角色，你需要远离炸弹客。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '遠離炸彈客'
+    winCondition: '遠離炸彈客',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/survivor.svg'
   },
   {
     id: 'private_detective',
@@ -388,7 +428,8 @@ export const BASE_ROLES: Role[] = [
     description: '灰队。你需要在游戏结束后猜出被埋葬的是哪一个身份，猜出获胜。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '誰是被埋葬的呢'
+    winCondition: '誰是被埋葬的呢',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/private_dectective.svg'
   },
   {
     id: 'gambler',
@@ -396,7 +437,8 @@ export const BASE_ROLES: Role[] = [
     description: '在游戏结束时，你需要大声宣布你认为获胜的队伍。如果猜对，你获胜。',
     team: Team.GREY,
     isKeyRole: false,
-    winCondition: '猜對獲勝隊伍'
+    winCondition: '猜對獲勝隊伍',
+    bgImage: ''
   },
   {
     id: 'drunkard',
@@ -405,6 +447,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.PURPLE,
     isKeyRole: false,
     winCondition: '攪局者出動',
-    capabilities: { canChangeColor: true }
+    capabilities: { canChangeColor: true },
+    bgImage: ''
   }
 ];
