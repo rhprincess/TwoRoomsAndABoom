@@ -109,7 +109,7 @@ export const BASE_ROLES: Role[] = [
     relatedRoleId: 'shy_guy_b',
     relatedRoleName: '害羞小子',
     winCondition: '兩個人一起害羞',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/shy_boy.svg'
   },
   {
     id: 'shy_guy_b',
@@ -120,7 +120,7 @@ export const BASE_ROLES: Role[] = [
     relatedRoleId: 'shy_guy_a',
     relatedRoleName: '害羞小子',
     winCondition: '兩個人一起害羞',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/shy_boy.svg'
   },
   {
     id: 'negotiator_red',
@@ -227,7 +227,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '說真話',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/angel_red.svg'
   },
   {
     id: 'angel_blue',
@@ -236,7 +236,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '說真話',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/angel_blue.svg'
   },
   {
     id: 'monster_red',
@@ -245,7 +245,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '撒謊',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/monster_red.svg'
   },
   {
     id: 'monster_blue',
@@ -254,7 +254,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '撒謊',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/monster_blue.svg'
   },
   {
     id: 'mute_clown_red',
@@ -263,7 +263,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.RED,
     isKeyRole: false,
     winCondition: '永遠不要說話',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mute_clown_red.svg'
   },
   {
     id: 'mute_clown_blue',
@@ -272,7 +272,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.BLUE,
     isKeyRole: false,
     winCondition: '永遠不要說話',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mute_clown_blue.svg'
   },
   {
     id: 'mummy_red',
@@ -282,7 +282,7 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     winCondition: '避免分享傳染！',
     capabilities: { canShare: true },
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mummy_red.svg'
   },
   {
     id: 'mummy_blue',
@@ -292,7 +292,7 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     winCondition: '避免分享傳染！',
     capabilities: { canShare: true },
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mummy_blue.svg'
   },
   {
     id: 'cupid',
@@ -321,7 +321,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.GREY,
     isKeyRole: false,
     winCondition: '遠離莫比，靠近總統',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/ahah.svg'
   },
   {
     id: 'mobby',
@@ -330,7 +330,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.GREY,
     isKeyRole: false,
     winCondition: '遠離亞哈，靠近總統',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/mobby.svg'
   },
   {
     id: 'housekeeper',
@@ -411,7 +411,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.GREY,
     isKeyRole: false,
     winCondition: '遠離總統',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/rival.svg'
   },
   {
     id: 'survivor',
@@ -438,7 +438,7 @@ export const BASE_ROLES: Role[] = [
     team: Team.GREY,
     isKeyRole: false,
     winCondition: '猜對獲勝隊伍',
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/dice.svg'
   },
   {
     id: 'drunkard',
@@ -448,6 +448,6 @@ export const BASE_ROLES: Role[] = [
     isKeyRole: false,
     winCondition: '攪局者出動',
     capabilities: { canChangeColor: true },
-    bgImage: ''
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/drunkard.svg'
   }
 ];
