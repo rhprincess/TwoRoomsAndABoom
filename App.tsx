@@ -115,8 +115,8 @@ const WIKI_DECKS = [
     },
     {
         title: "立即死亡",
-        desc: "加入了医生/工程以及继承者机制。如果医生没找到总统，蓝队直接输！非常刺激。",
-        roles: ["总统", "炸弹客", "医生", "工程师", "星期二骑士", "砰砰博士", "私家侦探"]
+        desc: "砰砰博士若与总统分享卡牌，则总统死亡，游戏结束，蓝队直接输！反之星期二骑士则为刺杀炸弹客，非常刺激。",
+        roles: ["总统", "炸弹客", "医生", "工程师", "星期二骑士", "砰砰博士", "赌徒"]
     },
     {
         title: "不想上班",
@@ -132,6 +132,11 @@ const WIKI_DECKS = [
         title: "爱情",
         desc: "丘比特降临！被连线的情侣必须在一起，还有罗密欧朱丽叶等CP角色。",
         roles: ["总统", "炸弹客", "爱神丘比特", "管家", "女仆", "罗密欧", "朱丽叶", "酒鬼"]
+    },
+    {
+        title: "仇恨",
+        desc: "纷争厄里斯降临！被指定的两人成为仇家，他们不能在一个房间！。",
+        roles: ["总统", "炸弹客", "纷争厄里斯", "亚哈", "莫比", "妻子", "情妇", "酒鬼"]
     },
     {
         title: "爱恨情仇",
@@ -510,7 +515,16 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                     </button>
 
                     {/* Content Container - Toggle Visibility */}
-                    <div className={`flex-grow overflow-y-auto pr-1 custom-scrollbar z-10 relative transition-all duration-300 pt-8 ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+                    <div className={`
+                        flex-grow overflow-y-auto custom-scrollbar z-10 relative 
+                        transition-all duration-500 ease-in-out
+                        rounded-xl border
+                        mt-8 mb-2 mx-1 p-3
+                        ${isExpanded 
+                            ? 'opacity-100 translate-y-0 bg-gradient-to-b from-white/60 to-white/30 backdrop-blur-md border-white/20 shadow-sm' 
+                            : 'opacity-0 -translate-y-4 pointer-events-none bg-transparent border-transparent'
+                        }
+                    `}>
                         <p className="text-sm font-bold leading-relaxed">{role.description}</p>
                         
                         {/* Capabilities Buttons */}
