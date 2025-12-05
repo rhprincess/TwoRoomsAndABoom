@@ -32,7 +32,8 @@ export const BASE_ROLES: Role[] = [
     description: '蓝队领袖。你必须避开炸弹人。如果游戏结束时你和炸弹客在同一个房间，你死亡，蓝队失败。',
     team: Team.BLUE,
     isKeyRole: true,
-    winCondition: '躲避炸彈客'
+    winCondition: '躲避炸彈客',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/president.png'
   },
   {
     id: 'bomber',
@@ -40,7 +41,8 @@ export const BASE_ROLES: Role[] = [
     description: '红队领袖。你必须找到总统。如果游戏结束时你和总统在同一个房间，你引爆炸弹，红队胜利。',
     team: Team.RED,
     isKeyRole: true,
-    winCondition: '跟著總統'
+    winCondition: '跟著總統',
+    bgImage: 'https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/cardimg/bomber.png'
   },
   {
     id: 'team_blue_member',
