@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { Room, Player, GameStatus, Team, Role, CardSet } from './types';
@@ -18,6 +17,7 @@ const HeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w
 const BrokenHeartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 10-2 0v8h-1.586l-1.293-1.293a1 1 0 00-1.414 0l-1.293 1.293H5V5a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;
 const ChevronDownIcon = ({ className = "h-6 w-6" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
 const ChevronUpIcon = ({ className = "h-6 w-6" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>;
+const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /><path d="M11 4.804A7.968 7.968 0 0014.5 4c1.255 0 2.443.29 3.5.804v10A7.969 7.969 0 0114.5 14c-1.669 0-3.218.51-4.5 1.385A7.962 7.962 0 019 14V4.804z" /></svg>;
 
 const BombIcon = () => <span className="text-2xl">💣</span>;
 const StarIcon = () => <span className="text-2xl">★</span>;
@@ -93,13 +93,232 @@ const RoundOverlay = ({ round }: { round: number }) => (
     </div>
 );
 
+// Wiki Data
+const WIKI_RULE_TABLE = [
+    { players: "6-10", r5: "/", r4: "/", r3: "1人", r2: "1人", r1: "1人" },
+    { players: "11-13", r5: "2人", r4: "2人", r3: "2人", r2: "1人", r1: "1人" },
+    { players: "14-17", r5: "3人", r4: "2人", r3: "2人", r2: "1人", r1: "1人" },
+    { players: "18-21", r5: "4人", r4: "3人", r3: "2人", r2: "1人", r1: "1人" },
+    { players: "22+", r5: "5人", r4: "4人", r3: "3人", r2: "2人", r1: "1人" },
+];
+
+const WIKI_DECKS = [
+    {
+        title: "基础玩法",
+        desc: "最经典的基础对局，适合新手入门。",
+        roles: ["总统", "炸弹客", "蓝队队员", "红队队员"]
+    },
+    {
+        title: "谁说话谁是小狗",
+        desc: "包含只能说真话的天使、只能说谎的恶魔、不能说话的哑剧小丑等角色，考验沟通技巧和逻辑推理。",
+        roles: ["总统", "炸弹客", "天使 (红/蓝)", "恶魔 (红/蓝)", "哑剧小丑 (红/蓝)", "木乃伊 (红/蓝)"]
+    },
+    {
+        title: "立即死亡",
+        desc: "加入了医生/工程以及继承者机制。如果医生没找到总统，蓝队直接输！非常刺激。",
+        roles: ["总统", "炸弹客", "医生", "工程师", "星期二骑士", "砰砰博士", "私家侦探"]
+    },
+    {
+        title: "不想上班",
+        desc: "灰队的大狂欢！包含各种中立角色，他们只想达成自己的小目标，不想管红蓝大战。",
+        roles: ["总统", "炸弹客", "实习生", "受害者", "竞争者", "幸存者"]
+    },
+    {
+        title: "埋葬",
+        desc: "游戏开始前上帝会埋葬一张卡牌。私家侦探需要猜出被埋葬的是谁。",
+        roles: ["总统", "炸弹客", "总统女儿", "殉道者", "医生", "工程师", "护士", "修补匠", "私家侦探"]
+    },
+    {
+        title: "爱情",
+        desc: "丘比特降临！被连线的情侣必须在一起，还有罗密欧朱丽叶等CP角色。",
+        roles: ["总统", "炸弹客", "爱神丘比特", "管家", "女仆", "罗密欧", "朱丽叶", "酒鬼"]
+    },
+    {
+        title: "爱恨情仇",
+        desc: "增加了纷争女神厄里导致恨意，以及各种复杂的爱恨关系网。",
+        roles: ["总统", "炸弹客", "纷争女神厄里斯", "爱神丘比特", "亚哈", "莫比", "管家", "女仆", "罗密欧", "朱丽叶", "妻子", "情妇", "赌徒"]
+    },
+    {
+        title: "颜色分享",
+        desc: "包含大量需要分享颜色或卡牌才能发动技能的角色，信息战必备。",
+        roles: ["总统", "炸弹客", "医生", "工程师", "腼腆少年 (红/蓝)", "谈判专家 (红/蓝)", "红队间谍", "蓝队间谍"]
+    }
+];
+
+// Game Wiki Modal
+const GameWikiModal = ({ onClose }: { onClose: () => void }) => {
+    const [activeTab, setActiveTab] = useState<'RULES' | 'FLOW' | 'GALLERY'>('RULES');
+
+    const getTeamColor = (team: Team) => {
+        switch(team) {
+            case Team.RED: return 'text-red-400 border-red-500/30 bg-red-900/20';
+            case Team.BLUE: return 'text-blue-400 border-blue-500/30 bg-blue-900/20';
+            case Team.GREY: return 'text-gray-300 border-gray-500/30 bg-gray-700/20';
+            case Team.PURPLE: return 'text-purple-400 border-purple-500/30 bg-purple-900/20';
+            default: return 'text-white border-white/30';
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[300] bg-white/10 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 text-white">
+            <div className="bg-[#2d285e] w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#4d4696]/50">
+                    <h2 className="text-xl font-black text-white font-traditional flex items-center gap-2">
+                        <BookOpenIcon /> 游戏百科 & 规则
+                    </h2>
+                    <button onClick={onClose} className="text-white/50 hover:text-white p-2 text-2xl">×</button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-white/10">
+                    <button onClick={() => setActiveTab('RULES')} className={`flex-1 py-3 font-bold text-sm transition ${activeTab === 'RULES' ? 'bg-white/10 text-white border-b-2 border-[#5abb2d]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>基础规则</button>
+                    <button onClick={() => setActiveTab('FLOW')} className={`flex-1 py-3 font-bold text-sm transition ${activeTab === 'FLOW' ? 'bg-white/10 text-white border-b-2 border-[#5abb2d]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>游戏流程</button>
+                    <button onClick={() => setActiveTab('GALLERY')} className={`flex-1 py-3 font-bold text-sm transition ${activeTab === 'GALLERY' ? 'bg-white/10 text-white border-b-2 border-[#5abb2d]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>角色图鉴</button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-grow overflow-y-auto p-6 custom-scrollbar bg-black/20">
+                    
+                    {activeTab === 'RULES' && (
+                        <div className="space-y-6 text-white/90">
+                            <section>
+                                <h3 className="text-[#5abb2d] font-bold text-lg mb-2">🔥 核心目标</h3>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                    <p className="mb-4">游戏分为两个主要阵营：<span className="text-red-400 font-bold">红队 (炸弹客)</span> 和 <span className="text-blue-400 font-bold">蓝队 (总统)</span>。</p>
+                                    <ul className="list-disc list-inside space-y-2 text-sm">
+                                        <li><strong className="text-red-400">红队胜利条件：</strong> 游戏结束时，炸弹客和总统在同一个房间。 (炸弹爆炸)</li>
+                                        <li><strong className="text-blue-400">蓝队胜利条件：</strong> 游戏结束时，炸弹客和总统不在同一个房间。 (总统存活)</li>
+                                        <li><strong className="text-gray-400">灰队 (中立)：</strong> 每个角色有独特的个人胜利条件 (如只想当赌徒猜赢家，或只是想和某个角色在一起)。</li>
+                                    </ul>
+                                </div>
+                            </section>
+                            <section>
+                                <h3 className="text-[#5abb2d] font-bold text-lg mb-2">⏱️ 游戏机制</h3>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm space-y-3">
+                                    <p>游戏通常进行 3-5 个回合。每个回合有固定的时长 (如 5分钟, 3分钟, 1分钟)。</p>
+                                    <p>玩家被分为两个房间。你不能与另一个房间的玩家交流。</p>
+                                    <p>每回合结束时，两个房间会进行<strong>人质交换</strong>。由房间的领袖选出人质送往对面。</p>
+                                    <p>这是唯一的移动机会。通过交换，你需要推断谁是总统，谁是炸弹客，并根据你的阵营目标调整人员配置。</p>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {activeTab === 'FLOW' && (
+                        <div className="space-y-6">
+                            <div className="relative border-l-2 border-white/10 ml-3 space-y-8 py-2">
+                                {[
+                                    { title: '1. 加入房间', desc: '玩家输入4位房间号加入。上帝可以在大厅配置卡组。' },
+                                    { title: '2. 身份分发', desc: '上帝点击发牌，所有人获得秘密身份。此时大家被随机分到房间1或房间2。' },
+                                    { title: '3. 选举领袖', desc: '第一回合系统随机指定领袖。后续回合，由上帝在交换人质后指定新的领袖。' },
+                                    { title: '4. 自由讨论', desc: '计时开始。玩家在房间内自由交流，可以分享卡牌颜色或具体身份 (有些角色有特殊分享能力)。' },
+                                    { title: '5. 人质交换', desc: '倒计时结束。领袖选择指定数量的玩家作为人质。双方确认后，人质互换房间。' },
+                                    { title: '6. 游戏结束', desc: '所有回合结束。上帝揭示结果：如果总统和炸弹客在一起，红队胜；否则蓝队胜。' },
+                                ].map((step, idx) => (
+                                    <div key={idx} className="relative pl-8">
+                                        <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#5abb2d] border-4 border-[#2d285e]"></div>
+                                        <h4 className="font-bold text-white mb-1">{step.title}</h4>
+                                        <p className="text-white/60 text-xs">{step.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <section className="mt-8">
+                                <h3 className="text-[#5abb2d] font-bold text-lg mb-4">📊 人质交换规则参考表</h3>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs text-center border-collapse border border-white/10">
+                                        <thead>
+                                            <tr className="bg-white/10 text-white font-bold">
+                                                <th className="p-2 border border-white/10">玩家人数</th>
+                                                <th className="p-2 border border-white/10">5 分钟</th>
+                                                <th className="p-2 border border-white/10">4 分钟</th>
+                                                <th className="p-2 border border-white/10">3 分钟</th>
+                                                <th className="p-2 border border-white/10">2 分钟</th>
+                                                <th className="p-2 border border-white/10">1 分钟</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {WIKI_RULE_TABLE.map((row, i) => (
+                                                <tr key={i} className="hover:bg-white/5">
+                                                    <td className="p-2 border border-white/10 font-bold">{row.players}</td>
+                                                    <td className="p-2 border border-white/10 text-white/60">{row.r5}</td>
+                                                    <td className="p-2 border border-white/10 text-white/60">{row.r4}</td>
+                                                    <td className="p-2 border border-white/10">{row.r3}</td>
+                                                    <td className="p-2 border border-white/10">{row.r2}</td>
+                                                    <td className="p-2 border border-white/10">{row.r1}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="text-xs text-white/40 mt-2">* 表格中的数字代表该回合结束时需要交换的人质数量。</p>
+                            </section>
+                        </div>
+                    )}
+
+                    {activeTab === 'GALLERY' && (
+                        <div className="space-y-8">
+                            <section>
+                                <h3 className="text-[#5abb2d] font-bold text-lg mb-4">🃏 推荐玩法 (卡组介绍)</h3>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {WIKI_DECKS.map((deck, i) => (
+                                        <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                            <h4 className="font-bold text-white mb-1 flex items-center gap-2">
+                                                {deck.title}
+                                            </h4>
+                                            <p className="text-xs text-white/60 mb-3 leading-relaxed">{deck.desc}</p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {deck.roles.map((r, idx) => (
+                                                    <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-black/20 text-white/80 border border-white/10">{r}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-[#5abb2d] font-bold text-lg mb-4">👥 全角色图鉴</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {BASE_ROLES.map(role => (
+                                        <div key={role.id} className={`p-3 rounded-xl border flex flex-col gap-2 ${getTeamColor(role.team)}`}>
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h4 className="font-black font-traditional text-lg">{role.name}</h4>
+                                                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider">{role.id}</span>
+                                                </div>
+                                                {role.isKeyRole && <span className="text-lg">👑</span>}
+                                            </div>
+                                            <p className="text-xs opacity-80 leading-relaxed bg-black/10 p-2 rounded">{role.description}</p>
+                                            <div className="mt-auto pt-2 border-t border-black/10">
+                                                <span className="text-[10px] uppercase font-bold opacity-60">胜利条件:</span>
+                                                <div className="text-xs font-bold">{role.winCondition || '-'}</div>
+                                            </div>
+                                            {role.relatedRoleName && (
+                                                <div className="text-[10px] opacity-70">
+                                                    关联: <strong>{role.relatedRoleName}</strong>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Background Music Component
 const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [userHasInteracted, setUserHasInteracted] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    // Reliable external music source (Sci-Fi Ambient)
-    const BG_MUSIC_URL = "https://pixabay.com/music/ambient-sci-fi-ambient-13184/"; 
+    // Use the original Supabase link as requested
+    const BG_MUSIC_URL = "https://rkbutmsmzzxivziaqklg.supabase.co/storage/v1/object/public/bgm/Two%20Rooms%20and%20a%20Boom.mp3"; 
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -163,7 +382,8 @@ const BackgroundMusic = ({ isHome }: { isHome: boolean }) => {
 
     return (
         <>
-            <audio ref={audioRef} src="https://cdn.pixabay.com/audio/2021/09/06/audio_95941913f0.mp3" loop preload="auto" />
+            {/* Added crossOrigin and type for better compatibility */}
+            <audio ref={audioRef} src={BG_MUSIC_URL} loop preload="auto" crossOrigin="anonymous" />
             <button 
                 onClick={toggleMusic}
                 className={`fixed z-[200] transition-all duration-300 drop-shadow-lg active:scale-90 ${positionClass} ${isPlaying ? 'text-[#5abb2d]' : 'text-white/40'}`}
@@ -221,7 +441,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
     verificationCode?: string, 
     onVerify?: (code: string) => void, 
     conditionMet?: boolean, 
-    isLeader?: boolean,
+    isLeader?: boolean, 
     isShared?: boolean,
     onShare?: () => void,
     onFind?: () => void,
@@ -414,6 +634,7 @@ export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showWiki, setShowWiki] = useState(false); // Wiki Modal State
   
   // God Mode States
   const [cardSets, setCardSets] = useState<CardSet[]>([]);
@@ -1119,6 +1340,15 @@ export default function App() {
                         </button>
                     </div>
                 </div>
+
+                {/* Wiki Button - Updated Style */}
+                <button 
+                    onClick={() => setShowWiki(true)}
+                    className="absolute bottom-8 right-8 text-white/70 hover:text-white transition active:scale-95"
+                    title="游戏规则 & 百科"
+                >
+                    <BookOpenIcon />
+                </button>
             </div>
         );
     }
@@ -1745,6 +1975,7 @@ export default function App() {
         {showLeaderOverlay && <LeaderAppointmentOverlay />}
         {showExchangeAlert && currentPlayer?.room_number && <ExchangeAlert targetRoom={currentPlayer.room_number} />}
         {showRoundStartOverlay && currentRoom && <RoundOverlay round={currentRoom.current_round} />}
+        {showWiki && <GameWikiModal onClose={() => setShowWiki(false)} />}
         {renderContent()}
     </div>
   );
