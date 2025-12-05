@@ -497,7 +497,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         <img 
                             src={role.bgImage} 
                             alt="Background" 
-                            className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none mix-blend-multiply transition-opacity duration-300" 
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none mix-blend-multiply duration-300" 
                         />
                     )}
 
