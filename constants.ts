@@ -8,15 +8,15 @@ export const COLORS = {
   
   // Blue Team
   BLUE_LIGHT: '#82a0d2',
-  BLUE_DARK: '#4c4595',
+  BLUE_DARK: '#4d4696',
   
   // Red Team
-  RED_LIGHT: '#ff8fa3',
-  RED_DARK: '#8a001a', // Deeper red for text/bg contrast
+  RED_LIGHT: '#de002b',
+  RED_DARK: '#4d1518', // Deeper red for text/bg contrast
   
   // Grey Team
-  GREY_LIGHT: '#d1d1d1',
-  GREY_DARK: '#4a4a4a',
+  GREY_LIGHT: '#9b9794',
+  GREY_DARK: '#656565',
 
   // Purple Team
   PURPLE_LIGHT: '#7a519f',
