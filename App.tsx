@@ -615,7 +615,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         </span>
                          {/* Win Condition (Second -> Left in flex-col vertical-rl) */}
                          {role.winCondition && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
+                            <span className="text-[14px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
