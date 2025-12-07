@@ -1703,12 +1703,12 @@ export default function App() {
                             </div>
                         </div>
                         
-                        {/* Standard Roles Accordion (Masonry Layout) */}
+                        {/* Standard Roles Accordion (Masonry Layout) -> Grid Layout */}
                         <div className="space-y-1">
                             <h3 className="text-sm font-bold opacity-50 mb-2">备选卡牌</h3>
-                            <div className="columns-2 gap-2 space-y-2">
+                            <div className="grid grid-cols-2 gap-2 items-start">
                                 {BASE_ROLES.filter(r => ((!r.isKeyRole || testMode) && !['blue_team', 'red_team'].includes(r.id))).map(r => (
-                                    <div key={r.id} className={`rounded border overflow-hidden transition break-inside-avoid mb-2 ${getTeamStyle(r.team)}`}>
+                                    <div key={r.id} className={`rounded border overflow-hidden transition ${getTeamStyle(r.team)}`}>
                                         <button 
                                             onClick={() => setExpandedRole(expandedRole === r.id ? null : r.id)}
                                             className="w-full p-2 text-left text-xs font-bold flex justify-between items-center hover:bg-white/5"
