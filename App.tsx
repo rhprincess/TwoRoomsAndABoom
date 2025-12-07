@@ -29,29 +29,50 @@ const SpinnerIcon = () => <svg className="animate-spin h-5 w-5 text-current" xml
 
 // Memoize FloatingIcons to prevent re-rendering
 const FloatingIcons = memo(() => {
-    const icons = useMemo(() => Array.from({ length: 15 }).map((_, i) => ({
-        id: i,
-        char: ['💣', '★', '?', '🃏'][Math.floor(Math.random() * 4)],
-        left: Math.floor(Math.random() * 95), // avoid edge
-        duration: 15 + Math.random() * 20,
-        delay: Math.random() * 10,
-        size: 20 + Math.random() * 40
-    })), []);
+    const icons = useMemo(() => {
+        // Collect available images from base roles
+        const availableImages = BASE_ROLES.filter(r => r.bgImage).map(r => r.bgImage);
+        
+        return Array.from({ length: 20 }).map((_, i) => {
+            const isImage = availableImages.length > 0 && Math.random() > 0.6; // 40% chance to be an image
+            const imageSrc = isImage ? availableImages[Math.floor(Math.random() * availableImages.length)] : null;
+            
+            return {
+                id: i,
+                isImage,
+                content: imageSrc || ['💣', '★', '?', '🃏'][Math.floor(Math.random() * 4)],
+                left: Math.floor(Math.random() * 95),
+                duration: 15 + Math.random() * 20,
+                delay: Math.random() * 10,
+                size: 20 + Math.random() * 40
+            };
+        });
+    }, []);
 
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
             {icons.map((icon) => (
                 <div 
                     key={icon.id} 
-                    className="floating-icon text-white drop-shadow-md"
+                    className="floating-icon drop-shadow-md text-white"
                     style={{
                         left: `${icon.left}%`,
                         animationDuration: `${icon.duration}s`,
                         animationDelay: `${icon.delay}s`,
-                        fontSize: `${icon.size}px`
+                        fontSize: !icon.isImage ? `${icon.size}px` : undefined,
+                        width: icon.isImage ? `${icon.size}px` : undefined,
+                        height: icon.isImage ? `${icon.size}px` : undefined,
                     }}
                 >
-                    {icon.char}
+                    {icon.isImage ? (
+                        <img 
+                            src={icon.content as string} 
+                            alt="" 
+                            className="w-full h-full object-cover rounded-full opacity-60 mix-blend-overlay" 
+                        />
+                    ) : (
+                        icon.content
+                    )}
                 </div>
             ))}
         </div>
@@ -289,9 +310,16 @@ const GameWikiModal = ({ onClose }: { onClose: () => void }) => {
                                     {BASE_ROLES.map(role => (
                                         <div key={role.id} className={`p-3 rounded-xl border flex flex-col gap-2 ${getTeamColor(role.team)}`}>
                                             <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h4 className="font-black font-traditional text-lg">{role.name}</h4>
-                                                    <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider">{role.id}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {role.bgImage ? (
+                                                        <img src={role.bgImage} alt={role.name} className="w-12 h-12 rounded-full object-cover border-2 border-white/20" />
+                                                    ) : (
+                                                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/20">?</div>
+                                                    )}
+                                                    <div>
+                                                        <h4 className="font-black font-traditional text-lg">{role.name}</h4>
+                                                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider">{role.id}</span>
+                                                    </div>
                                                 </div>
                                                 {role.isKeyRole && <span className="text-lg">👑</span>}
                                             </div>
@@ -502,7 +530,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         <img 
                             src={role.bgImage} 
                             alt="Background" 
-                            className="absolute inset-0 w-full h-full object-cover pointer-events-none mix-blend-multiply duration-300" 
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-80 duration-300" 
                         />
                     )}
 
@@ -519,7 +547,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         flex-grow overflow-y-auto custom-scrollbar z-10 relative 
                         transition-all duration-500 ease-in-out
                         rounded-xl border
-                        mt-4 mb-1 p-2
+                        mt-8 p-3
                         ${isExpanded 
                             ? 'opacity-100 translate-y-0 bg-gradient-to-b from-white/60 to-white/30 backdrop-blur-md border-white/20 shadow-sm' 
                             : 'opacity-0 -translate-y-4 pointer-events-none bg-transparent border-transparent'
@@ -615,7 +643,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         </span>
                          {/* Win Condition (Second -> Left in flex-col vertical-rl) */}
                          {role.winCondition && (
-                            <span className="text-[14px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
@@ -1675,12 +1703,12 @@ export default function App() {
                             </div>
                         </div>
                         
-                        {/* Standard Roles Accordion */}
+                        {/* Standard Roles Accordion (Masonry Layout) */}
                         <div className="space-y-1">
                             <h3 className="text-sm font-bold opacity-50 mb-2">备选卡牌</h3>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="columns-2 gap-2 space-y-2">
                                 {BASE_ROLES.filter(r => ((!r.isKeyRole || testMode) && !['blue_team', 'red_team'].includes(r.id))).map(r => (
-                                    <div key={r.id} className={`rounded border overflow-hidden transition ${getTeamStyle(r.team)}`}>
+                                    <div key={r.id} className={`rounded border overflow-hidden transition break-inside-avoid mb-2 ${getTeamStyle(r.team)}`}>
                                         <button 
                                             onClick={() => setExpandedRole(expandedRole === r.id ? null : r.id)}
                                             className="w-full p-2 text-left text-xs font-bold flex justify-between items-center hover:bg-white/5"
