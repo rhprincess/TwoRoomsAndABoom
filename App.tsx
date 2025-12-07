@@ -547,7 +547,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         flex-grow overflow-y-auto custom-scrollbar z-10 relative 
                         transition-all duration-500 ease-in-out
                         rounded-xl border
-                        mt-8 p-3
+                        mt-4 p-2
                         ${isExpanded 
                             ? 'opacity-100 translate-y-0 bg-gradient-to-b from-white/60 to-white/30 backdrop-blur-md border-white/20 shadow-sm' 
                             : 'opacity-0 -translate-y-4 pointer-events-none bg-transparent border-transparent'
@@ -643,7 +643,7 @@ const CardDisplay = ({ role, team, verificationCode, onVerify, conditionMet, isL
                         </span>
                          {/* Win Condition (Second -> Left in flex-col vertical-rl) */}
                          {role.winCondition && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
+                            <span className="text-[14px] font-bold uppercase tracking-wider opacity-90 text-left" style={{ color: lightBg }}>
                                 {role.winCondition}
                             </span>
                         )}
