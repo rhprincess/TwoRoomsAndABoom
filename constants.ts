@@ -3,24 +3,24 @@ import { Role, Team } from './types';
 
 export const COLORS = {
   BG: '#4d4696',
-  SUCCESS_BG: '#5abb2d',
-  SUCCESS_TEXT: '#185021',
+  SUCCESS_BG: '#6AB647',
+  SUCCESS_TEXT: '#224B2A',
   
   // Blue Team
-  BLUE_LIGHT: '#82a0d2',
-  BLUE_DARK: '#4d4696',
+  BLUE_LIGHT: '#6795C2',
+  BLUE_DARK: '#364D8F',
   
   // Red Team
-  RED_LIGHT: '#de002b',
-  RED_DARK: '#4d1518', // Deeper red for text/bg contrast
+  RED_LIGHT: '#D7262F',
+  RED_DARK: '#42191A', // Deeper red for text/bg contrast
   
   // Grey Team
-  GREY_LIGHT: '#9b9794',
-  GREY_DARK: '#656565',
+  GREY_LIGHT: '#8B8C88',
+  GREY_DARK: '#5C5E5B',
 
   // Purple Team
-  PURPLE_LIGHT: '#7a519f',
-  PURPLE_DARK: '#461475'
+  PURPLE_LIGHT: '#6D5594',
+  PURPLE_DARK: '#392C70'
 };
 
 export const DEFAULT_ROUND_LENGTHS = [300, 180, 60]; // 5m, 3m, 1m in seconds
