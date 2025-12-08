@@ -2,7 +2,8 @@
 import { Role, Team } from './types';
 
 export const COLORS = {
-  BG: '#4d4696',
+  // BG 4d4696
+  BG: '#F5F5F5',
   SUCCESS_BG: '#6AB647',
   SUCCESS_TEXT: '#224B2A',
   
